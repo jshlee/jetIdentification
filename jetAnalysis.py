@@ -40,21 +40,29 @@ tfile = ROOT.TFile("jets.root","RECREATE")
 
 jet_ptD = array("d",[0])
 jet_axis2 = array("d",[0])
-jet_useQC_mult = array("d",[0])
-jet_mult = array("d",[0])
+jet_useQC_mult = array("i",[0])
+jet_mult = array("i",[0])
+jet_neutral_Multi = array("i",[0])
+jet_charged_Multi = array("i",[0])
+
+
 
 q_ttree = ROOT.TTree("quark","tree")
 q_ttree.Branch("jet_ptD",jet_ptD,"jet_ptD/D")
 q_ttree.Branch("jet_axis2",jet_axis2,"jet_axis2/D")
-q_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/D")
-q_ttree.Branch("jet_mult",jet_mult,"jet_mult/D")
+q_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/I")
+q_ttree.Branch("jet_mult",jet_mult,"jet_mult/I")
+q_ttree.Branch("jet_neutral_Multi",jet_neutral_Multi,"jet_neutral_Multi/I")
+q_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
 
 
 g_ttree = ROOT.TTree("gluon","tree")
 g_ttree.Branch("jet_ptD",jet_ptD,"jet_ptD/D")
 g_ttree.Branch("jet_axis2",jet_axis2,"jet_axis2/D")
-g_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/D")
-g_ttree.Branch("jet_mult",jet_mult,"jet_mult/D")
+g_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/I")
+g_ttree.Branch("jet_mult",jet_mult,"jet_mult/I")
+g_ttree.Branch("jet_neutral_Multi",jet_neutral_Multi,"jet_neutral_Multi/I")
+g_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
 
 
 
@@ -126,6 +134,9 @@ for iev,event in enumerate(events):
 		ave_dphi2 = 0
 
 
+		neutral_Multi = 0
+		charged_Multi = 0
+
 
 		for d in range(jet.numberOfDaughters()):
             # https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/PackedCandidate.h
@@ -144,6 +155,13 @@ for iev,event in enumerate(events):
 						continue
 					if ((dau.dxy()*dau.dxy())/(dau.dxyError()*dau.dxyError()) < 25.):
 						useQC_mult = useQC_mult + 1
+
+			#calculate Multiplicity
+			if dau.charge() == 0:
+				neutral_Multi = neutral_Multi + 1
+			if dau.charge() != 0:
+				charged_Multi = charged_Multi + 1
+
 			else:
 				if (dau.pt() < 1.0): 
 					continue
@@ -194,6 +212,9 @@ for iev,event in enumerate(events):
 			jet_axis2[0] = axis2
 			jet_useQC_mult[0] = useQC_mult
 			jet_mult[0] = mult
+			jet_neutral_Multi[0] = neutral_Multi
+			jet_charged_Multi[0] = charged_Multi
+
 			g_ttree.Fill()
 			#gjets_PtD.Fill(ptD)
 			#gjets_axis2.Fill(axis2)
@@ -205,6 +226,9 @@ for iev,event in enumerate(events):
 			jet_axis2[0] = axis2
 			jet_useQC_mult[0] = useQC_mult
 			jet_mult[0] = mult
+			jet_neutral_Multi[0] = neutral_Multi
+			jet_charged_Multi[0] = charged_Multi
+
 			q_ttree.Fill()
 			#qjets_PtD.Fill(ptD)
 			#qjets_axis2.Fill(axis2)
