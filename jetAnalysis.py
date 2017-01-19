@@ -26,43 +26,78 @@ events = Events("/cms/scratch/jlee/TT_TuneCUETP8M1_13TeV-powheg-pythia8/RunIISpr
 
 
 def deltaPhi(phi1, phi2):
-    dphi = phi2 - phi1
-    if dphi > pi:
-        dphi -= 2.0*pi
-    if dphi <= -pi:
-        dphi += 2.0*pi
-    return dphi
+	dphi = phi2 - phi1
+	if dphi > pi:
+		dphi -= 2.0*pi
+	if dphi <= -pi:
+		dphi += 2.0*pi
+	return dphi
 
+from array import array
 
-
-# histogram
+# TTree
 tfile = ROOT.TFile("jets.root","RECREATE")
 
-jets_Parton = ROOT.TH1D("jets_Partron", "", 30, 0, 30)
-gjets_PtD = ROOT.TH1D("qjet_PtD","",30,0,8)
-gjets_PtD.SetLineColor(2)
-qjets_PtD = ROOT.TH1D("gjet_PtD","",30,0,8)
-qjets_PtD.SetLineColor(1)
-gjets_eta = ROOT.TH1D("gjet_eta","",3,-6,6)
-gjets_eta.SetLineColor(2)
-qjets_eta = ROOT.TH1D("qjet_eta","",3,-6,6)
-qjets_eta.SetLineColor(1)
-gjets_axis2 = ROOT.TH1D("qjet_axis2","",30,0,0.2)
-gjets_axis2.SetLineColor(2)
-qjets_axis2 = ROOT.TH1D("qjet_axis2","",30,0,0.2)
-qjets_axis2.SetLineColor(1)
+jet_ptD = array("d",[0])
+jet_axis2 = array("d",[0])
+jet_useQC_mult = array("i",[0])
+jet_mult = array("i",[0])
+jet_neutral_Multi = array("i",[0])
+jet_charged_Multi = array("i",[0])
+
+
+
+q_ttree = ROOT.TTree("quark","tree")
+q_ttree.Branch("jet_ptD",jet_ptD,"jet_ptD/D")
+q_ttree.Branch("jet_axis2",jet_axis2,"jet_axis2/D")
+q_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/I")
+q_ttree.Branch("jet_mult",jet_mult,"jet_mult/I")
+q_ttree.Branch("jet_neutral_Multi",jet_neutral_Multi,"jet_neutral_Multi/I")
+q_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
+
+
+g_ttree = ROOT.TTree("gluon","tree")
+g_ttree.Branch("jet_ptD",jet_ptD,"jet_ptD/D")
+g_ttree.Branch("jet_axis2",jet_axis2,"jet_axis2/D")
+g_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/I")
+g_ttree.Branch("jet_mult",jet_mult,"jet_mult/I")
+g_ttree.Branch("jet_neutral_Multi",jet_neutral_Multi,"jet_neutral_Multi/I")
+g_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
+
+
+
+
+# Histogram
+#jets_Parton = ROOT.TH1D("jets_Partron", "", 30, 0, 30)
+#gjets_PtD = ROOT.TH1D("gjet_PtD","",30,0,8)
+#gjets_PtD.SetLineColor(2)
+#qjets_PtD = ROOT.TH1D("qjet_PtD","",30,0,8)
+#qjets_PtD.SetLineColor(1)
+#gjets_axis2 = ROOT.TH1D("gjet_axis2","",30,0,0.2)
+#gjets_axis2.SetLineColor(2)
+#qjets_axis2 = ROOT.TH1D("qjet_axis2","",30,0,0.2)
+#qjets_axis2.SetLineColor(1)
+#g_useQC_mult = ROOT.TH1D("g_useQC_mult","",10,-5,20)
+#g_useQC_mult.SetLineColor(1)
+#g_mult = ROOT.TH1D("g_mult","",30,0,30)
+#g_mult.SetLineColor(2)
+#q_useQC_mult = ROOT.TH1D("q_useQC_mult","",10,-5,20)
+#q_useQC_mult.SetLineColor(3)
+#q_mult = ROOT.TH1D("q_mult","",30,0,30)
+#q_mult.SetLineColor(4)
+
 
 
 
 for iev,event in enumerate(events):
 
 
-    event.getByLabel(jetLabel, jets)
-    print "\nEvent %d: run %6d, lumi %4d, event %12d" % (iev,event.eventAuxiliary().run(), event.eventAuxiliary().luminosityBlock(),event.eventAuxiliary().event())
+	event.getByLabel(jetLabel, jets)
+	print "\nEvent %d: run %6d, lumi %4d, event %12d" % (iev,event.eventAuxiliary().run(), event.eventAuxiliary().luminosityBlock(),event.eventAuxiliary().event())
     #https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/Jet.h
-    for i,jet in enumerate(jets.product()):
-        print "jet %3d: pt %5.1f, eta %+4.2f, mass %5.1f, partonFlavour %3d" % (
-            i, jet.pt(), jet.eta(), jet.mass(), jet.partonFlavour())
+	for i,jet in enumerate(jets.product()):
+		#print "jet %3d: pt %5.1f, eta %+4.2f, mass %5.1f, partonFlavour %3d" % (
+		#	i, jet.pt(), jet.eta(), jet.mass(), jet.partonFlavour())
 
 #        print "jet.bDiscriminator()", jet.bDiscriminator()
 #        print "jet.chargedHadronEnergyFraction()", jet.chargedHadronEnergyFraction(),
@@ -76,194 +111,148 @@ for iev,event in enumerate(events):
 #        print "jet.HFHadronEnergyFraction()", jet.HFHadronEnergyFraction()
 
 
-        #initialize
-        g_sum_weight = 0
-        g_sum_pt = 0
-        g_sum_deta = 0
-        g_sum_dphi = 0
-        g_sum_deta2 = 0
-        g_sum_detadphi = 0
-        g_sum_dphi2 = 0
 
-        q_sum_weight = 0
-        q_sum_pt = 0
-        q_sum_deta = 0
-        q_sum_dphi = 0
-        q_sum_deta2 = 0
-        q_sum_detadphi = 0
-        q_sum_dphi2 = 0
+		#initialize
+		mult = 0
+		useQC_mult = 0
+		sum_weight = 0
+		sum_pt = 0
+		sum_deta = 0
+		sum_dphi = 0
+		sum_deta2 = 0
+		sum_detadphi = 0
+		sum_dphi2 = 0
 
 
+        #axis2, ptD valiables
+		a = 0
+		b = 0
+		c = 0
+		ave_deta = 0
+		ave_dphi = 0
+		ave_deta2 = 0
+		ave_dphi2 = 0
 
 
-        if ROOT.TMath.Abs(jet.partonFlavour()) == 21:
-
-            for d in range(jet.numberOfDaughters()):
-                # https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/PackedCandidate.h
-                dau = jet.daughter(d)
-                print "daughter: pt %5.1f, eta %+4.2f, phi %+4.2f, pdgId %3d" % (dau.pt(), dau.eta(), dau.phi(), dau.pdgId())
-            
-            #dphi = ROOT.Math.VectorUtil.DeltaPhi(dau.phi(), jet.phi())
-            #anti-jet abs
+		neutral_Multi = 0
+		charged_Multi = 0
 
 
-                #calculate valiabe
-                g_partPt = dau.pt()
-                g_weight = g_partPt*g_partPt
-                g_deta = dau.eta() - jet.eta()
-                g_dphi = deltaPhi(dau.phi(), jet.phi())
+		for d in range(jet.numberOfDaughters()):
+            # https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/PackedCandidate.h
+			dau = jet.daughter(d)
+			#print "daughter: pt %5.1f, eta %+4.2f, phi %+4.2f, pdgId %3d" % (dau.pt(), dau.eta(), dau.phi(), dau.pdgId())
+        	
 
-                g_sum_weight += g_weight
-                g_sum_pt += g_partPt
-                g_sum_deta += g_deta*g_weight
-                g_sum_dphi += g_dphi*g_weight
-                g_sum_deta2 += g_deta*g_deta*g_weight
-                g_sum_detadphi += g_deta*g_dphi*g_weight
-                g_sum_dphi2 += g_dphi*g_dphi*g_weight
+			# calculate mult
+			if dau.charge():
+				if not (dau.fromPV() > 1 and dau.trackHighPurity()):
+					continue
+				mult = mult + 1
 
+				if dau.dzError() != 0:
+					if ((dau.dz()*dau.dz())/(dau.dzError()*dau.dzError()) > 25.):
+						continue
+					if ((dau.dxy()*dau.dxy())/(dau.dxyError()*dau.dxyError()) < 25.):
+						useQC_mult = useQC_mult + 1
 
+			#calculate Multiplicity
+			if dau.charge() == 0:
+				neutral_Multi = neutral_Multi + 1
+			if dau.charge() != 0:
+				charged_Multi = charged_Multi + 1
 
-                #calculate axis2, ptD
-                g_a = 0
-                g_b = 0
-                g_c = 0
-                g_ave_deta = 0
-                g_ave_dphi = 0
-                g_ave_deta2 = 0
-                g_ave_dphi2 = 0
-                
-                if g_sum_weight > 0:
-                    g_ave_deta  = g_sum_deta/g_sum_weight;
-                    g_ave_dphi  = g_sum_dphi/g_sum_weight;
-                    g_ave_deta2 = g_sum_deta2/g_sum_weight;
-                    g_ave_dphi2 = g_sum_dphi2/g_sum_weight;
-                    g_a         = g_ave_deta2 - g_ave_deta*g_ave_deta;                          
-                    g_b         = g_ave_dphi2 - g_ave_dphi*g_ave_dphi;                          
-                    g_c         = -(g_sum_detadphi/g_sum_weight - g_ave_deta*g_ave_dphi); 
+			else:
+				if (dau.pt() < 1.0): 
+					continue
+				mult = mult + 1
+				useQC_mult = useQC_mult + 1
 
-                    g_ptD = sqrt(g_sum_weight/g_sum_pt)
+			#calculate valiables
+			partPt = dau.pt()
+			weight = partPt*partPt
+			deta = dau.eta() - jet.eta()
+			dphi = deltaPhi(dau.phi(), jet.phi())
 
-                g_delta = sqrt(fabs((g_a-g_b)*(g_a-g_b)+4*g_c*g_c))
+			sum_weight += weight
+			sum_pt += partPt
+			sum_deta += deta*weight
+			sum_dphi += dphi*weight
+			sum_deta2 += deta*deta*weight
+			sum_detadphi += deta*dphi*weight
+			sum_dphi2 += dphi*dphi*weight
+ 	    
+		#calculate ptD, axis2
+		if sum_weight > 0:
+			ave_deta  = sum_deta/sum_weight
+			ave_dphi  = sum_dphi/sum_weight
+			ave_deta2 = sum_deta2/sum_weight
+			ave_dphi2 = sum_dphi2/sum_weight
+			a         = ave_deta2 - ave_deta*ave_deta
+			b         = ave_dphi2 - ave_dphi*ave_dphi
+			c         = -(sum_detadphi/sum_weight - ave_deta*ave_dphi)
 
-                if g_a+g_b-g_delta > 0:
-                    g_axis2 = sqrt(0.5*(g_a+g_b-g_delta))
+			ptD = sqrt(sum_weight)/sum_pt
 
-                else:
-                    g_axis2 = 0
-                    g_ptD = 0
-                
-                gjets_PtD.Fill(g_ptD) 
-                gjets_axis2.Fill(g_axis2)
+		if not (sum_weight > 0):
+			ptD = 0
 
-            # Gluon partonFlavour Histogram
-            jets_Parton.Fill(ROOT.TMath.Abs(jet.partonFlavour()))
+		delta = sqrt(fabs((a-b)*(a-b)+4*c*c))
 
+		if a+b-delta > 0:
+			axis2 = sqrt(0.5*(a+b-delta))
 
-        if ROOT.TMath.Abs(jet.partonFlavour()) != 21 and jet.partonFlavour() != 0:
-            for d in range(jet.numberOfDaughters()):
-                # https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/PackedCandidate.h
-                dau = jet.daughter(d)
-                print "daughter: pt %5.1f, eta %+4.2f, phi %+4.2f, pdgId %3d" % (dau.pt(), dau.eta(), dau.phi(), dau.pdgId())
-            
-            #dphi = ROOT.Math.VectorUtil.DeltaPhi(dau.phi(), jet.phi())
-            #anti-jet abs
- 
-                #calculate valiabe
-                q_partPt = dau.pt()
-                q_weight = q_partPt*q_partPt
-                q_deta = dau.eta() - jet.eta()
-                q_dphi = deltaPhi(dau.phi(), jet.phi())
-
-                q_sum_weight += q_weight
-                q_sum_pt += q_partPt
-                q_sum_deta += q_deta*q_weight
-                q_sum_dphi += q_dphi*q_weight
-                q_sum_deta2 += q_deta*q_deta*q_weight
-                q_sum_detadphi += q_deta*q_dphi*q_weight
-                q_sum_dphi2 += q_dphi*q_dphi*q_weight
+		if not (a+b-delta > 0):
+			axis2 = 0
 
 
 
-                #calculate axis2, ptD
-                q_a = 0
-                q_b = 0
-                q_c = 0
-                q_ave_deta = 0
-                q_ave_dphi = 0
-                q_ave_deta2 = 0
-                q_ave_dphi2 = 0
-                
-                if q_sum_weight > 0:
-                    q_ave_deta  = q_sum_deta/q_sum_weight;
-                    q_ave_dphi  = q_sum_dphi/q_sum_weight;
-                    q_ave_deta2 = q_sum_deta2/q_sum_weight;
-                    q_ave_dphi2 = q_sum_dphi2/q_sum_weight;
-                    q_a         = q_ave_deta2 - q_ave_deta*q_ave_deta;                          
-                    q_b         = q_ave_dphi2 - q_ave_dphi*q_ave_dphi;                          
-                    q_c         = -(q_sum_detadphi/q_sum_weight - q_ave_deta*q_ave_dphi); 
+		if ROOT.TMath.Abs(jet.partonFlavour()) == 21:
+			jet_ptD[0] = ptD
+			jet_axis2[0] = axis2
+			jet_useQC_mult[0] = useQC_mult
+			jet_mult[0] = mult
+			jet_neutral_Multi[0] = neutral_Multi
+			jet_charged_Multi[0] = charged_Multi
 
-                    q_ptD = sqrt(q_sum_weight/q_sum_pt)
+			g_ttree.Fill()
+			#gjets_PtD.Fill(ptD)
+			#gjets_axis2.Fill(axis2)
+			#g_useQC_mult.Fill(jet_useQC_mult)
+			#g_mult.Fill(jet_mult)
 
-                q_delta = sqrt(fabs((q_a-q_b)*(q_a-q_b)+4*q_c*q_c))
+		if ROOT.TMath.Abs(jet.partonFlavour()) != 21 and jet.partonFlavour() != 0:
+			jet_ptD[0] = ptD
+			jet_axis2[0] = axis2
+			jet_useQC_mult[0] = useQC_mult
+			jet_mult[0] = mult
+			jet_neutral_Multi[0] = neutral_Multi
+			jet_charged_Multi[0] = charged_Multi
 
-                if q_a+q_b-q_delta > 0:
-                    q_axis2 = sqrt(0.5*(q_a+q_b-q_delta))
-
-                else:
-                    q_axis2 = 0
-                    q_ptD = 0
-                
-                qjets_PtD.Fill(q_ptD) 
-                qjets_axis2.Fill(q_axis2)
+			q_ttree.Fill()
+			#qjets_PtD.Fill(ptD)
+			#qjets_axis2.Fill(axis2)
+			#q_useQC_mult.Fill(jet_useQC_mult)
+			#q_mult.Fill(jet_mult)
 
 
-		print dau.fromPV()
-		print dau.charge()
-		print dau.dxy()
+#			else:
+#				axis2 = 0
+#				ptD = 0
+
+			
+        # Gluon partonFlavour Histogram
+#		jets_Parton.Fill(ROOT.TMath.Abs(jet.partonFlavour()))
+
+
+
+			
+	#print "q_ptD: %f g_ptD: %f q_axis2: %f  g_axis2: %f " % (q_ptD, g_ptD, q_axis2, g_axis2)
+#	print "------------------------------------------------------"
 
 
 
 
-
-
-            # quark  partonFlavour Histogram
-            jets_Parton.Fill(ROOT.TMath.Abs(jet.partonFlavour()))
-
-    print "q_ptD: %f g_ptD: %f q_axis2: %f  g_axis2: %f " % (q_ptD, g_ptD, q_axis2, g_axis2)
-
-    print "------------------------------------------------------"
-
-
-
-c1 = ROOT.TCanvas() 
-qjets_PtD.Draw()
-gjets_PtD.Draw("same")
-leg1 = ROOT.TLegend(0.9,0.8,0.6,0.9)
-leg1.SetHeader("jet ptD")
-leg1.AddEntry(gjets_PtD,"gloun jets ptD", "F")
-leg1.AddEntry(qjets_PtD,"quark jets ptD", "F")
-leg1.Draw()
-c1.SaveAs("jet_PtD.png")
-
-c2 = ROOT.TCanvas()
-qjets_axis2.Draw()
-gjets_axis2.Draw("same")
-leg2 = ROOT.TLegend(0.9,0.8,0.6,0.9)
-leg2.SetHeader("jet axis2")
-leg2.AddEntry(gjets_axis2,"gloun jets axis2", "F")
-leg2.AddEntry(qjets_axis2,"quark jets axis2", "F")
-leg2.Draw()
-c2.SaveAs("jet_axis2.png")
-
-c3 = ROOT.TCanvas()
-qjets_eta.Draw()
-gjets_eta.Draw()
-leg3 = ROOT.TLegend(0.9,0.8,0.6,0.9)
-leg3.SetHeader("jet eta")
-leg3.AddEntry(gjets_eta, "gloun jets eta","F")
-leg3.AddEntry(qjets_eta, "quark jets eta","F")
-leg3.Draw()
-c3.SaveAs("jet_eta.png")
 
 tfile.Write()
 tfile.Close()
