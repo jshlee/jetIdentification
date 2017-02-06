@@ -22,8 +22,14 @@ from DataFormats.FWLite import Handle, Events
 jets, jetLabel = Handle("std::vector<pat::Jet>"), "slimmedJets"
 
 # open file
-events = Events("/cms/scratch/jlee/TT_TuneCUETP8M1_13TeV-powheg-pythia8/RunIISpring16MiniAODv2-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14_ext3-v1/0064B539-803A-E611-BDEA-002590D0B060.root")
+## QCD jets pythia
+events = Events("/pnfs/user/jlee/data/QCD_Pt-15to7000_TuneCUETP8M1_FlatP6_13TeV_pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM/02E23E7E-71BE-E611-8258-FA163E8B40DC.root")
 
+## QCD jets herwigpp
+#events = Events("/pnfs/user/jlee/data/QCD_Pt-15to7000_TuneCUETHS1_Flat_13TeV_herwigpp/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM/0401C3EE-60D2-E611-BBB0-1866DAEA7E28.root")
+
+## ttbar jets
+#events = Events("/pnfs/user/jlee/data/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM/0693E0E7-97BE-E611-B32F-0CC47A78A3D8.root")
 
 def deltaPhi(phi1, phi2):
 	dphi = phi2 - phi1
@@ -45,8 +51,6 @@ jet_mult = array("i",[0])
 jet_neutral_Multi = array("i",[0])
 jet_charged_Multi = array("i",[0])
 
-
-
 q_ttree = ROOT.TTree("quark","tree")
 q_ttree.Branch("jet_ptD",jet_ptD,"jet_ptD/D")
 q_ttree.Branch("jet_axis2",jet_axis2,"jet_axis2/D")
@@ -55,7 +59,6 @@ q_ttree.Branch("jet_mult",jet_mult,"jet_mult/I")
 q_ttree.Branch("jet_neutral_Multi",jet_neutral_Multi,"jet_neutral_Multi/I")
 q_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
 
-
 g_ttree = ROOT.TTree("gluon","tree")
 g_ttree.Branch("jet_ptD",jet_ptD,"jet_ptD/D")
 g_ttree.Branch("jet_axis2",jet_axis2,"jet_axis2/D")
@@ -63,9 +66,6 @@ g_ttree.Branch("jet_useQC_mult",jet_useQC_mult,"jet_useQC_mult/I")
 g_ttree.Branch("jet_mult",jet_mult,"jet_mult/I")
 g_ttree.Branch("jet_neutral_Multi",jet_neutral_Multi,"jet_neutral_Multi/I")
 g_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
-
-
-
 
 # Histogram
 #jets_Parton = ROOT.TH1D("jets_Partron", "", 30, 0, 30)
@@ -86,18 +86,12 @@ g_ttree.Branch("jet_charged_Multi",jet_charged_Multi,"jet_charged_Multi/I")
 #q_mult = ROOT.TH1D("q_mult","",30,0,30)
 #q_mult.SetLineColor(4)
 
-
-
-
 for iev,event in enumerate(events):
-
-
 	event.getByLabel(jetLabel, jets)
 	print "\nEvent %d: run %6d, lumi %4d, event %12d" % (iev,event.eventAuxiliary().run(), event.eventAuxiliary().luminosityBlock(),event.eventAuxiliary().event())
     #https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/Jet.h
 	for i,jet in enumerate(jets.product()):
-		#print "jet %3d: pt %5.1f, eta %+4.2f, mass %5.1f, partonFlavour %3d" % (
-		#	i, jet.pt(), jet.eta(), jet.mass(), jet.partonFlavour())
+		print "jet %3d: pt %5.1f, eta %+4.2f, mass %5.1f, partonFlavour %3d" % (i, jet.pt(), jet.eta(), jet.mass(), jet.partonFlavour())
 
 #        print "jet.bDiscriminator()", jet.bDiscriminator()
 #        print "jet.chargedHadronEnergyFraction()", jet.chargedHadronEnergyFraction(),
@@ -141,7 +135,7 @@ for iev,event in enumerate(events):
 		for d in range(jet.numberOfDaughters()):
             # https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/PackedCandidate.h
 			dau = jet.daughter(d)
-			#print "daughter: pt %5.1f, eta %+4.2f, phi %+4.2f, pdgId %3d" % (dau.pt(), dau.eta(), dau.phi(), dau.pdgId())
+			print "daughter: pt %5.1f, eta %+4.2f, phi %+4.2f, pdgId %3d" % (dau.pt(), dau.eta(), dau.phi(), dau.pdgId())
         	
 
 			# calculate mult
