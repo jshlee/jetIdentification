@@ -30,105 +30,90 @@ using namespace reco;
 using namespace edm;
 
 class jetAnalyser : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
-   public:
-      explicit jetAnalyser(const edm::ParameterSet&);
-      ~jetAnalyser(){};
+public:
+  explicit jetAnalyser(const edm::ParameterSet&);
+  ~jetAnalyser(){};
 
-   private:
-      virtual void 			beginJob() override;
-      virtual void 			endJob() override;
-      virtual void 			analyze(const edm::Event&, const edm::EventSetup&) override;
-      template <class jetClass> bool 	jetId(const jetClass *jet, bool tight = false, bool loose = false);
-      std::tuple<int, int, int, float, float, float, float> 	calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC);
-      bool 				isPatJetCollection(const edm::Handle<edm::View<reco::Jet>>& jets);
-      bool 				isPackedCandidate(const reco::Candidate* candidate);
-      template<class a, class b> int 	countInCone(a center, b objectsToCount);
-      template<class a> bool		isBalanced(a objects);
-      int 				getPileUp(edm::Handle<std::vector<PileupSummaryInfo>>& pupInfo);
-      reco::GenParticleCollection::const_iterator getMatchedGenParticle(const reco::Jet *jet, edm::Handle<reco::GenParticleCollection>& genParticles);
+private:
+  virtual void 			beginJob() override;
+  virtual void 			endJob() override;
+  virtual void 			analyze(const edm::Event&, const edm::EventSetup&) override;
+  template <class jetClass> bool 	jetId(const jetClass *jet, bool tight = false, bool loose = false);
+  std::tuple<int, int, int, float, float, float, float> 	calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC);
+  bool 				isPatJetCollection(const edm::Handle<edm::View<reco::Jet>>& jets);
+  bool 				isPackedCandidate(const reco::Candidate* candidate);
+  template<class a, class b> int 	countInCone(a center, b objectsToCount);
+  template<class a> bool		isBalanced(a objects);
+  int 				getPileUp(edm::Handle<std::vector<PileupSummaryInfo>>& pupInfo);
+  reco::GenParticleCollection::const_iterator getMatchedGenParticle(const reco::Jet *jet, edm::Handle<reco::GenParticleCollection>& genParticles);
 
-      edm::EDGetTokenT<edm::View<reco::Jet>> 		jetsToken;
-      edm::EDGetTokenT<edm::View<reco::Candidate>> 	candidatesToken;
-      edm::EDGetTokenT<double> 				rhoToken;
-      edm::EDGetTokenT<reco::VertexCollection> 		vertexToken;
-      edm::EDGetTokenT<reco::GenJetCollection> 		genJetsToken;
-      edm::EDGetTokenT<reco::GenParticleCollection> 	genParticlesToken;
-      edm::EDGetTokenT<reco::JetTagCollection> 		bTagToken;
-      edm::EDGetTokenT<std::vector<PileupSummaryInfo> > puToken;
-      edm::InputTag					csvInputTag;
-      std::string 					jecService;
-/*    edm::InputTag 					qgVariablesInputTag;
-      edm::EDGetTokenT<edm::ValueMap<float>> 		qgToken, axis2Token, ptDToken;
-      edm::EDGetTokenT<edm::ValueMap<int>> 		multToken;*/
-      const double 					minJetPt, deltaRcut;
-      const bool 					useQC;
+  edm::EDGetTokenT<edm::View<reco::Jet>> 		jetsToken;
+  edm::EDGetTokenT<edm::View<reco::Candidate>> 	candidatesToken;
+  edm::EDGetTokenT<double> 				rhoToken;
+  edm::EDGetTokenT<reco::VertexCollection> 		vertexToken;
+  edm::EDGetTokenT<reco::GenJetCollection> 		genJetsToken;
+  edm::EDGetTokenT<reco::GenParticleCollection> 	genParticlesToken;
+  edm::EDGetTokenT<reco::JetTagCollection> 		bTagToken;
+  edm::EDGetTokenT<std::vector<PileupSummaryInfo> > puToken;
+  edm::InputTag					csvInputTag;
+  std::string 					jecService;
+  const double 					minJetPt, deltaRcut;
+  const bool 					useQC;
 
-      const JetCorrector 				*JEC;
-      edm::Service<TFileService> 			fs;
-      TTree 						*tree;
-//    QGLikelihoodCalculator 				*qglcalc;
+  const JetCorrector 				*JEC;
+  edm::Service<TFileService> 			fs;
+  TTree 						*tree;
 
-      float rho, pt, eta, axis2, axis1, ptD, bTag, ptDoubleCone, motherMass, pt_dr_log;
-      int nEvent, nPileUp, nPriVtxs, mult, nmult, cmult, partonId, jetIdLevel, nGenJetsInCone, nGenJetsForGenParticle, nJetsForGenParticle, motherId;
-      bool matchedJet, balanced;
-      std::vector<float> *closebyJetdR, *closebyJetPt;
+  float rho, pt, eta, axis2, axis1, ptD, bTag, ptDoubleCone, motherMass, pt_dr_log;
+  int nEvent, nPileUp, nPriVtxs, mult, nmult, cmult, partonId, jetIdLevel, nGenJetsInCone, nGenJetsForGenParticle, nJetsForGenParticle, motherId;
+  bool matchedJet, balanced;
+  std::vector<float> *closebyJetdR, *closebyJetPt;
 
-      bool weStillNeedToCheckJets, weAreUsingPatJets;
-      bool weStillNeedToCheckJetCandidates, weAreUsingPackedCandidates;
+  bool weStillNeedToCheckJets, weAreUsingPatJets;
+  bool weStillNeedToCheckJetCandidates, weAreUsingPackedCandidates;
 };
 
-
-/*
- * Constructor
- */
 jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
-  jetsToken( 		consumes<edm::View<reco::Jet>>(				iConfig.getParameter<edm::InputTag>("jetsInputTag"))),
-  candidatesToken(	consumes<edm::View<reco::Candidate>>(			iConfig.getParameter<edm::InputTag>("pfCandidatesInputTag"))),
-  rhoToken( 		consumes<double>(					iConfig.getParameter<edm::InputTag>("rhoInputTag"))),
-  vertexToken(    	consumes<reco::VertexCollection>(			iConfig.getParameter<edm::InputTag>("vertexInputTag"))),
-  genJetsToken(    	consumes<reco::GenJetCollection>(			iConfig.getParameter<edm::InputTag>("genJetsInputTag"))),
-  genParticlesToken(    consumes<reco::GenParticleCollection>(			iConfig.getParameter<edm::InputTag>("genParticlesInputTag"))),
+  jetsToken( 		consumes<edm::View<reco::Jet>>( iConfig.getParameter<edm::InputTag>("jetsInputTag"))),
+  candidatesToken(	consumes<edm::View<reco::Candidate>>( iConfig.getParameter<edm::InputTag>("pfCandidatesInputTag"))),
+  rhoToken( 		consumes<double>( iConfig.getParameter<edm::InputTag>("rhoInputTag"))),
+  vertexToken(    	consumes<reco::VertexCollection>( iConfig.getParameter<edm::InputTag>("vertexInputTag"))),
+  genJetsToken(    	consumes<reco::GenJetCollection>( iConfig.getParameter<edm::InputTag>("genJetsInputTag"))),
+  genParticlesToken(    consumes<reco::GenParticleCollection>( iConfig.getParameter<edm::InputTag>("genParticlesInputTag"))),
   puToken ( 		consumes<std::vector<PileupSummaryInfo> > (edm::InputTag("slimmedAddPileupInfo")) ),
-  csvInputTag(									iConfig.getParameter<edm::InputTag>("csvInputTag")),
-//qgVariablesInputTag(  							iConfig.getParameter<edm::InputTag>("qgVariablesInputTag")),
-  jecService( 									iConfig.getParameter<std::string>("jec")),
-  minJetPt(									iConfig.getUntrackedParameter<double>("minJetPt", 20.)),
-  deltaRcut(									iConfig.getUntrackedParameter<double>("deltaRcut", 0.3)),
-  useQC(									iConfig.getUntrackedParameter<bool>("useQualityCuts", false))
+  csvInputTag( iConfig.getParameter<edm::InputTag>("csvInputTag")),
+  jecService( iConfig.getParameter<std::string>("jec")),
+  minJetPt( iConfig.getUntrackedParameter<double>("minJetPt", 20.)),
+  deltaRcut( iConfig.getUntrackedParameter<double>("deltaRcut", 0.3)),
+  useQC( iConfig.getUntrackedParameter<bool>("useQualityCuts", false))
 {
   weStillNeedToCheckJets	  = true;
   weStillNeedToCheckJetCandidates = true;
   bTagToken		=	consumes<reco::JetTagCollection>(		edm::InputTag(csvInputTag));
-/*qgToken		= 	consumes<edm::ValueMap<float>>(			edm::InputTag(qgVariablesInputTag.label(), "qgLikelihood"));
-  axis2Token		= 	consumes<edm::ValueMap<float>>(			edm::InputTag(qgVariablesInputTag.label(), "axis2Likelihood"));
-  multToken		= 	consumes<edm::ValueMap<int>>(			edm::InputTag(qgVariablesInputTag.label(), "multLikelihood"));
-  ptDToken		= 	consumes<edm::ValueMap<float>>(			edm::InputTag(qgVariablesInputTag.label(), "ptDLikelihood"));*/
-//qglcalc 		= 	new QGLikelihoodCalculator("/user/tomc/QGTagger/CMSSW_7_0_9_patch1/src/QGDev/jetAnalyser/data/pdfQG_AK4chs_antib_13TeV.root");
 }
 
-
-/*
- * Prepare for analyzing the event: choose pat or reco jets
- */
 void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup){
   for(auto v : {closebyJetdR, closebyJetPt}) v->clear();
 
   nEvent	= (int) iEvent.id().event();
 
-  edm::Handle<edm::View<reco::Jet>> 		jets;							iEvent.getByToken(jetsToken, 		jets);
-  edm::Handle<edm::View<reco::Candidate>> 	candidates;						iEvent.getByToken(candidatesToken, 	candidates);
-  edm::Handle<std::vector<PileupSummaryInfo>> 	pupInfo;						iEvent.getByToken(puToken, 	pupInfo);
-  edm::Handle<reco::VertexCollection> 		vertexCollection;					iEvent.getByToken(vertexToken, 		vertexCollection);
-  edm::Handle<double> 				rhoHandle;						iEvent.getByToken(rhoToken, 		rhoHandle);
-  edm::Handle<reco::GenJetCollection> 		genJets;						iEvent.getByToken(genJetsToken, 	genJets);
-  edm::Handle<reco::GenParticleCollection> 	genParticles;						iEvent.getByToken(genParticlesToken, 	genParticles);
-  edm::Handle<reco::JetTagCollection> 		bTagHandle;		if(!isPatJetCollection(jets))
-                                                                        if(!csvInputTag.label().empty())iEvent.getByToken(bTagToken, 		bTagHandle);
-/*edm::Handle<edm::ValueMap<float>> 		qgHandle;		if(!isPatJetCollection(jets))	iEvent.getByToken(qgToken, 		qgHandle);
-  edm::Handle<edm::ValueMap<float>> 		axis2Handle; 		if(!isPatJetCollection(jets))	iEvent.getByToken(axis2Token, 		axis2Handle);
-  edm::Handle<edm::ValueMap<float>> 		ptDHandle;  		if(!isPatJetCollection(jets))	iEvent.getByToken(multToken, 		multHandle);
-  edm::Handle<edm::ValueMap<int>> 		multHandle;   		if(!isPatJetCollection(jets))	iEvent.getByToken(ptDToken,		ptDHandle);
-*/
+  edm::Handle<edm::View<reco::Jet>> 		jets;
+  iEvent.getByToken(jetsToken, 		jets);
+  edm::Handle<edm::View<reco::Candidate>> 	candidates;
+  iEvent.getByToken(candidatesToken, 	candidates);
+  edm::Handle<std::vector<PileupSummaryInfo>> 	pupInfo;
+  iEvent.getByToken(puToken, 	pupInfo);
+  edm::Handle<reco::VertexCollection> 		vertexCollection;
+  iEvent.getByToken(vertexToken, 		vertexCollection);
+  edm::Handle<double> 				rhoHandle;
+  iEvent.getByToken(rhoToken, 		rhoHandle);
+  edm::Handle<reco::GenJetCollection> 		genJets;
+  iEvent.getByToken(genJetsToken, 	genJets);
+  edm::Handle<reco::GenParticleCollection> 	genParticles;
+  iEvent.getByToken(genParticlesToken, 	genParticles);
+  edm::Handle<reco::JetTagCollection> 		bTagHandle;
+  if(!isPatJetCollection(jets))
+    if(!csvInputTag.label().empty())iEvent.getByToken(bTagToken, 		bTagHandle);
 
   if(!isPatJetCollection(jets)) JEC = JetCorrector::getJetCorrector(jecService, iSetup);
 
@@ -138,12 +123,15 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   nPileUp 	= getPileUp(pupInfo);
 
   // Start jet loop (the tree is filled for each jet separately)
-  balanced = isBalanced(genJets);										// Check if first two generator jets are balanced
+  balanced = isBalanced(genJets);
+  // Check if first two generator jets are balanced
   for(auto jet = jets->begin();  jet != jets->end(); ++jet){
-    if(jet == jets->begin() + 2) balanced = false;								// 3rd jet and higher are never balanced
+    if(jet == jets->begin() + 2) balanced = false;
+    // 3rd jet and higher are never balanced
 
-    if(isPatJetCollection(jets)) pt = jet->pt();								// If miniAOD, jets are already corrected
-    else			 pt = jet->pt()*JEC->correction(*jet, iEvent, iSetup);				// If RECO, we correct them on the fly
+    // If miniAOD, jets are already corrected// If RECO, we correct them on the fly
+    if(isPatJetCollection(jets)) pt = jet->pt();
+    else			 pt = jet->pt()*JEC->correction(*jet, iEvent, iSetup);
     if(pt < minJetPt) continue;
 
     // Closeby jet study variables (i.e. dR and pt of other jets within 1.2)
@@ -163,20 +151,26 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       partonId 			= matchedGenParticle->pdgId();
       nJetsForGenParticle 	= countInCone(matchedGenParticle, jets);
       nGenJetsForGenParticle 	= countInCone(matchedGenParticle, genJets);
-      if(matchedGenParticle->numberOfMothers() == 1){								// Very experimental, but first tests shows it's good at finding W's and t's
-        motherId		= matchedGenParticle->mother()->pdgId();					// A bit more difficult for QCD, where it's sometimes a quark, decaying into
-        motherMass		= matchedGenParticle->mother()->mass();						// quark+gluon, and sometimes just a proton with a lot of other QCD mess and 
-      } else {													// sometimes 2 mothers (mostly two quarks recoiling each other, but sometimes
-        motherId		= 0;										// also two quarks going into two gluons etc...)
+      if(matchedGenParticle->numberOfMothers() == 1){
+	// Very experimental, but first tests shows it's good at finding W's and t's
+	// A bit more difficult for QCD, where it's sometimes a quark, decaying into
+	// quark+gluon, and sometimes just a proton with a lot of other QCD mess and
+	// sometimes 2 mothers (mostly two quarks recoiling each other, but sometimes
+	// also two quarks going into two gluons etc...)
+        motherId		= matchedGenParticle->mother()->pdgId();
+        motherMass		= matchedGenParticle->mother()->mass();
+      } else {
+        motherId		= 0;
         motherMass		= 0;
       }
     } else {
-      partonId 			= 0; 
+      partonId 			= 0;
       nJetsForGenParticle 	= 0;
       nGenJetsForGenParticle 	= 0;
       motherId			= 0;
       motherMass		= 0;
-      continue;													// To keep the tuples small, we only save matched jets
+      continue;
+      // To keep the tuples small, we only save matched jets
     }
     nGenJetsInCone 		= countInCone(jet, genJets);
 
@@ -189,17 +183,17 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       auto recoJet 	= static_cast<const reco::PFJet*>(&*jet);
       jetIdLevel	= jetId(recoJet) + jetId(recoJet, false, true) + jetId(recoJet, true); 
       bTag		= csvInputTag.label().empty() ? 0 : (*bTagHandle)[jetRef];
-/*    qg		= (*qgHandle)[jetRef];
-      axis2		= (*axis2Handle)[jetRef];
-      mult		= (*multHandle)[jetRef];
-      ptD		= (*ptDHandle)[jetRef];*/
+      /*    qg		= (*qgHandle)[jetRef];
+	    axis2		= (*axis2Handle)[jetRef];
+	    mult		= (*multHandle)[jetRef];
+	    ptD		= (*ptDHandle)[jetRef];*/
     }
 
     std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log) = calcVariables(&*jet, vertexCollection);
     axis2 			= -std::log(axis2);
     axis1                       = -std::log(axis1);
     eta				= jet->eta();
-//  qg 				= qglcalc->computeQGLikelihood(pt, eta, rho, {(float) mult, ptD, axis2});
+    //  qg = qglcalc->computeQGLikelihood(pt, eta, rho, {(float) mult, ptD, axis2});
     if(mult < 2) continue;  
 
     ptDoubleCone = 0;
@@ -211,10 +205,7 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   }
 }
 
-
-/*
- * Begin job: create vectors and set up tree
- */
+//Begin job: create vectors and set up tree
 void jetAnalyser::beginJob(){
   for(auto v : {&closebyJetdR, &closebyJetPt}) *v = new std::vector<float>();
 
@@ -247,18 +238,11 @@ void jetAnalyser::beginJob(){
   tree->Branch("closebyJetPt",			"vector<float>",		&closebyJetPt);
 }
 
-
-/*
- * End of jobs: delete vectors
- */
 void jetAnalyser::endJob(){
- for(auto v : {closebyJetdR, closebyJetPt}) delete v;
+  for(auto v : {closebyJetdR, closebyJetPt}) delete v;
 }
 
-
-/*
- * Function to tell us if we are using pat::Jet or reco::PFJet
- */
+//Function to tell us if we are using pat::Jet or reco::PFJet
 bool jetAnalyser::isPatJetCollection(const edm::Handle<edm::View<reco::Jet>>& jets){
   if(weStillNeedToCheckJets){
     if(typeid(pat::Jet)==typeid(*(jets->begin())))         weAreUsingPatJets = true;
@@ -269,10 +253,7 @@ bool jetAnalyser::isPatJetCollection(const edm::Handle<edm::View<reco::Jet>>& je
   return weAreUsingPatJets;
 }
 
-
-/*
- * Function to tell us if we are using packedCandidates, only test for first candidate
- */
+//Function to tell us if we are using packedCandidates, only test for first candidate
 bool jetAnalyser::isPackedCandidate(const reco::Candidate* candidate){
   if(weStillNeedToCheckJetCandidates){
     if(typeid(pat::PackedCandidate)==typeid(*candidate))   weAreUsingPackedCandidates = true;
@@ -283,10 +264,7 @@ bool jetAnalyser::isPackedCandidate(const reco::Candidate* candidate){
   return weAreUsingPackedCandidates;
 }
 
-
-/* 
- * Calculation of axis2, mult and ptD
- */
+//Calculation of axis2, mult and ptD
 std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC){
   float sum_weight = 0., sum_deta = 0., sum_dphi = 0., sum_deta2 = 0., sum_dphi2 = 0., sum_detadphi = 0., sum_pt = 0.;
   int mult = 0, nmult = 0, cmult = 0;
@@ -294,7 +272,8 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
 
   //Loop over the jet constituents
   for(auto daughter : jet->getJetConstituentsQuick()){
-    if(isPackedCandidate(daughter)){											//packed candidate situation
+    if(isPackedCandidate(daughter)){
+      //packed candidate situation
       auto part = static_cast<const pat::PackedCandidate*>(daughter);
 
       if(part->charge()){
@@ -323,15 +302,18 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
       auto part = static_cast<const reco::PFCandidate*>(daughter);
 
       reco::TrackRef itrk = part->trackRef();
-      if(itrk.isNonnull()){												//Track exists --> charged particle
+      //Track exists --> charged particle
+      if(itrk.isNonnull()){
         auto vtxLead  = vC->begin();
-        auto vtxClose = vC->begin();											//Search for closest vertex to track
+        auto vtxClose = vC->begin();
+	//Search for closest vertex to track
         for(auto vtx = vC->begin(); vtx != vC->end(); ++vtx){
           if(fabs(itrk->dz(vtx->position())) < fabs(itrk->dz(vtxClose->position()))) vtxClose = vtx;
         }
         if(!(vtxClose == vtxLead && itrk->quality(reco::TrackBase::qualityByName("highPurity")))) continue;
 
-        if(useQC){													//If useQC, require dz and d0 cuts
+        if(useQC){
+	  //If useQC, require dz and d0 cuts
           float dz = itrk->dz(vtxClose->position());
           float d0 = itrk->dxy(vtxClose->position());
           float dz_sigma_square = pow(itrk->dzError(),2) + pow(vtxClose->zError(),2);
@@ -345,8 +327,10 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
 	  ++mult;
 	  ++cmult;
 	}
-      } else {														//No track --> neutral particle
-        if(part->pt() < 1.0) continue;											//Only use neutrals with pt > 1 GeV
+      } else {
+	//No track --> neutral particle
+        if(part->pt() < 1.0) continue;
+	//Only use neutrals with pt > 1 GeV
         ++mult;
 	++nmult;
       }
@@ -389,56 +373,46 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
   return std::make_tuple(mult, nmult, cmult,  ptD, axis2, axis1, pt_dr_log);
 }
 
-
-
-/*
- * Calculate jetId for levels loose, medium and tight
- */
+//Calculate jetId for levels loose, medium and tight
 template <class jetClass> bool jetAnalyser::jetId(const jetClass *jet, bool tight, bool medium){
-    bool jetid = false;
-    const auto& j = *jet;
-    float NHF    = j.neutralHadronEnergyFraction();
-    float NEMF   = j.neutralEmEnergyFraction();
-    float CHF    = j.chargedHadronEnergyFraction();
-    //float MUF    = j.muonEnergyFraction();
-    float CEMF   = j.chargedEmEnergyFraction();
-    int NumConst = j.chargedMultiplicity()+j.neutralMultiplicity();
-    int CHM      = j.chargedMultiplicity();
-    int NumNeutralParticle =j.neutralMultiplicity(); 
-    float eta = j.eta();
+  bool jetid = false;
+  const auto& j = *jet;
+  float NHF    = j.neutralHadronEnergyFraction();
+  float NEMF   = j.neutralEmEnergyFraction();
+  float CHF    = j.chargedHadronEnergyFraction();
+  //float MUF    = j.muonEnergyFraction();
+  float CEMF   = j.chargedEmEnergyFraction();
+  int NumConst = j.chargedMultiplicity()+j.neutralMultiplicity();
+  int CHM      = j.chargedMultiplicity();
+  int NumNeutralParticle =j.neutralMultiplicity(); 
+  float eta = j.eta();
 
-
-    // POG JetID loose, tight, tightLepVeto
-    if (not tight and not medium)
+  // POG JetID loose, tight, tightLepVeto
+  if (not tight and not medium)
     { // loose -- default
-        jetid=(NHF<0.99 && NEMF<0.99 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
-        jetid = jetid or (NEMF<0.90 && NumNeutralParticle>2 && abs(eta)>2.7 && abs(eta)<=3.0 ) ;
-        jetid = jetid or (NEMF<0.90 && NumNeutralParticle>10 && abs(eta)>3.0 ) ;
-	return jetid;
+      jetid=(NHF<0.99 && NEMF<0.99 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
+      jetid = jetid or (NEMF<0.90 && NumNeutralParticle>2 && abs(eta)>2.7 && abs(eta)<=3.0 ) ;
+      jetid = jetid or (NEMF<0.90 && NumNeutralParticle>10 && abs(eta)>3.0 ) ;
+      return jetid;
     }
-
-    if (medium) // no medium recommendation at the moment. https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID this is LOOSE
+  if (medium) // no medium recommendation at the moment. https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID this is LOOSE
     {
-        jetid=(NHF<0.99 && NEMF<0.99 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
-        jetid = jetid or (NEMF<0.90 && NumNeutralParticle>2 && abs(eta)>2.7 && abs(eta)<=3.0 ) ;
-        jetid = jetid or (NEMF<0.90 && NumNeutralParticle>10 && abs(eta)>3.0 ) ;
-	return jetid;
+      jetid=(NHF<0.99 && NEMF<0.99 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
+      jetid = jetid or (NEMF<0.90 && NumNeutralParticle>2 && abs(eta)>2.7 && abs(eta)<=3.0 ) ;
+      jetid = jetid or (NEMF<0.90 && NumNeutralParticle>10 && abs(eta)>3.0 ) ;
+      return jetid;
     }
-    if(tight)
-    {
-	
-        jetid = (NHF<0.90 && NEMF<0.90 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
-        jetid = jetid or (NEMF<0.90 && NumNeutralParticle>2 && abs(eta)>2.7 && abs(eta)<=3.0 ) ;
-jetid = jetid or (NEMF<0.90 && NumNeutralParticle>10 && abs(eta)>3.0 ) ;
-	return jetid;
+  if(tight)
+    {	
+      jetid = (NHF<0.90 && NEMF<0.90 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
+      jetid = jetid or (NEMF<0.90 && NumNeutralParticle>2 && abs(eta)>2.7 && abs(eta)<=3.0 ) ;
+      jetid = jetid or (NEMF<0.90 && NumNeutralParticle>10 && abs(eta)>3.0 ) ;
+      return jetid;
     }	
-    return true;
+  return true;
 }
 
-
-/*
- * Count objects around another object within dR < deltaRcut
- */
+//Count objects around another object within dR < deltaRcut
 template<class a, class b> int jetAnalyser::countInCone(a center, b objectsToCount){
   int counter = 0;
   for(auto object = objectsToCount->begin(); object != objectsToCount->end(); ++object){
@@ -447,10 +421,7 @@ template<class a, class b> int jetAnalyser::countInCone(a center, b objectsToCou
   return counter;
 }
 
-
-/*
- * Are two leading objects in the collection balanced ?
- */
+//Are two leading objects in the collection balanced ?
 template<class a> bool jetAnalyser::isBalanced(a objects){
   if(objects->size() > 2){
     auto object1 = objects->begin();
@@ -460,10 +431,6 @@ template<class a> bool jetAnalyser::isBalanced(a objects){
   } else return true;
 }
 
-
-/*
- * Get nPileUp
- */
 int jetAnalyser::getPileUp(edm::Handle<std::vector<PileupSummaryInfo>>& pupInfo){
   if(!pupInfo.isValid()) return -1;
   auto PVI = pupInfo->begin();
@@ -472,16 +439,14 @@ int jetAnalyser::getPileUp(edm::Handle<std::vector<PileupSummaryInfo>>& pupInfo)
   else return -1;
 }
 
-
-/*
- * Parton Id matching (physics definition)
- */
 reco::GenParticleCollection::const_iterator jetAnalyser::getMatchedGenParticle(const reco::Jet *jet, edm::Handle<reco::GenParticleCollection>& genParticles){
   float deltaRmin = 999;
   auto matchedGenParticle = genParticles->end();
   for(auto genParticle = genParticles->begin(); genParticle != genParticles->end(); ++genParticle){
-    if(!genParticle->isHardProcess()) continue;								// This status flag is exactly the pythia8 status-23 we need (i.e. the same as genParticles->status() == 23), probably also ok to use for other generators
-    if(abs(genParticle->pdgId()) > 5 && abs(genParticle->pdgId() != 21)) continue;			// Only consider udscb quarks and gluons
+    if(!genParticle->isHardProcess()) continue;
+    // This status flag is exactly the pythia8 status-23 we need (i.e. the same as genParticles->status() == 23), probably also ok to use for other generators
+    // Only consider udscb quarks and gluons
+    if(abs(genParticle->pdgId()) > 5 && abs(genParticle->pdgId() != 21)) continue;
     float thisDeltaR = reco::deltaR(*genParticle, *jet);
     if(thisDeltaR < deltaRmin && thisDeltaR < deltaRcut){
       deltaRmin = thisDeltaR;
@@ -490,6 +455,5 @@ reco::GenParticleCollection::const_iterator jetAnalyser::getMatchedGenParticle(c
   }
   return matchedGenParticle;
 }
-
 
 DEFINE_FWK_MODULE(jetAnalyser);
