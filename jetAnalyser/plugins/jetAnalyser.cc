@@ -89,7 +89,7 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
 {
   weStillNeedToCheckJets	  = true;
   weStillNeedToCheckJetCandidates = true;
-  bTagToken		=	consumes<reco::JetTagCollection>(		edm::InputTag(csvInputTag));
+  bTagToken = consumes<reco::JetTagCollection>( edm::InputTag(csvInputTag));
 }
 
 void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup){
@@ -113,7 +113,7 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iEvent.getByToken(genParticlesToken, 	genParticles);
   edm::Handle<reco::JetTagCollection> 		bTagHandle;
   if(!isPatJetCollection(jets))
-    if(!csvInputTag.label().empty())iEvent.getByToken(bTagToken, 		bTagHandle);
+    if(!csvInputTag.label().empty())iEvent.getByToken(bTagToken, bTagHandle);
 
   if(!isPatJetCollection(jets)) JEC = JetCorrector::getJetCorrector(jecService, iSetup);
 
