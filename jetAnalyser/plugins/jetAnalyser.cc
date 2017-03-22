@@ -278,7 +278,7 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
     
       ptDoubleCone = 0;
       for(auto candidate = candidates->begin(); candidate != candidates->end(); ++candidate){
-	if(reco::deltaR(*candidate, *jet) < 0.8) ptDoubleCone += candidate->pt();
+	if(reco::deltaR(*candidate, *jet) < deltaRcut*2) ptDoubleCone += candidate->pt();
       }
  
       tree->Fill();
