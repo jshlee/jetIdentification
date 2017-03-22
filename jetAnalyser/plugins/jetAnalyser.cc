@@ -244,12 +244,10 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         std::vector< std::vector<float> > jetMat = makeJetMat(&*jet, vertexCollection, jetNum, partonId);
         for(auto row = jetMat.begin(); row != jetMat.end(); ++row){
             for(auto col = row->begin(); col != row->end(); ++col){
-                if( col != --(row->end()) ){
+                if( col != --(row->end()) )
                     outJets << *col << ',';
-                }
-                else {
+                else
                     outJets << *col << endl; 
-                }
             }
         }
 
@@ -387,9 +385,11 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
         auto part = static_cast<const pat::PackedCandidate*>(daughter);
 
             if(part->charge()){
-                if(!(part->fromPV() > 1 && part->trackHighPurity())) continue;
+                if(!(part->fromPV() > 1 && part->trackHighPurity()))
+                    continue;
                 if(useQC){
-                    if((part->dz()*part->dz())/(part->dzError()*part->dzError()) > 25.) continue;
+                    if((part->dz()*part->dz())/(part->dzError()*part->dzError()) > 25.)
+                        continue;
                     if((part->dxy()*part->dxy())/(part->dxyError()*part->dxyError()) < 25.){
 	                ++mult;
 	                ++cmult;
@@ -401,7 +401,8 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
 	        }
             }
             else {
-                if(part->pt() < 1.0) continue;
+                if(part->pt() < 1.0)
+                    continue;
                 ++mult;
 	        ++nmult;
             }
@@ -421,9 +422,11 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
                 auto vtxClose = vC->begin();
 	        //Search for closest vertex to track
                 for(auto vtx = vC->begin(); vtx != vC->end(); ++vtx){
-                    if(fabs(itrk->dz(vtx->position())) < fabs(itrk->dz(vtxClose->position()))) vtxClose = vtx;
+                    if(fabs(itrk->dz(vtx->position())) < fabs(itrk->dz(vtxClose->position())))
+                        vtxClose = vtx;
                 }
-                if(!(vtxClose == vtxLead && itrk->quality(reco::TrackBase::qualityByName("highPurity")))) continue;
+                if(!(vtxClose == vtxLead && itrk->quality(reco::TrackBase::qualityByName("highPurity"))))
+                    continue;
 
                 if(useQC){
 	            //If useQC, require dz and d0 cuts
@@ -431,7 +434,8 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
                     float d0 = itrk->dxy(vtxClose->position());
                     float dz_sigma_square = pow(itrk->dzError(),2) + pow(vtxClose->zError(),2);
                     float d0_sigma_square = pow(itrk->d0Error(),2) + pow(vtxClose->xError(),2) + pow(vtxClose->yError(),2);
-                    if(dz*dz/dz_sigma_square > 25.) continue;
+                    if(dz*dz/dz_sigma_square > 25.)
+                        continue;
                     if(d0*d0/d0_sigma_square < 25.) {
 	                ++mult;
 	                ++cmult;
@@ -570,14 +574,16 @@ reco::GenParticleCollection::const_iterator jetAnalyser::getMatchedGenParticle(c
     float deltaRmin = 999;
     auto matchedGenParticle = genParticles->end();
     for(auto genParticle = genParticles->begin(); genParticle != genParticles->end(); ++genParticle){
-        if(!genParticle->isHardProcess()) continue;
+        if(!genParticle->isHardProcess())
+            continue;
         // This status flag is exactly the pythia8 status-23 we need (i.e. the same as genParticles->status() == 23), probably also ok to use for other generators
         // Only consider udscb quarks and gluons
-        if(abs(genParticle->pdgId()) > 5 && abs(genParticle->pdgId() != 21)) continue;
+        if(abs(genParticle->pdgId()) > 5 && abs(genParticle->pdgId() != 21))
+            continue;
         float thisDeltaR = reco::deltaR(*genParticle, *jet);
         if(thisDeltaR < deltaRmin && thisDeltaR < deltaRcut){
             deltaRmin = thisDeltaR;
-          matchedGenParticle = genParticle;
+            matchedGenParticle = genParticle;
         }
     }
     return matchedGenParticle;
