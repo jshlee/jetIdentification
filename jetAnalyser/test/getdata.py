@@ -260,10 +260,11 @@ for iev,event in enumerate(events):
 
 
 f = open("array.txt",'w')
-f.write("//number jetflavour deta dphi pt charge\n")
+f.write("//number jetflavour deta dphi pt charge 0 0 0 0 0 0 line is dummy\n")
 			#box[iev][i].append([dau.pt(),deta,dphi,dau.charge()])
 for i in range(len(box)):
 	for j in range(len(box[i])):
+		f.write(str(num)+'\t0\t0\t0\t0\t0\n')
 		line=str(num)+'\t'+str(box[i][j][0])+'\t'
 		num+=1;
 		#print box[i][j][0]
@@ -282,8 +283,8 @@ f.close()
 #print len(box[i][j])
 #print box[0][0][0]
 #print box[0][0][1][1]
-tfile.Write()
-tfile.Close()
+#tfile.Write()
+#tfile.Close()
 
 
 print "-----------------------------------------------------"
