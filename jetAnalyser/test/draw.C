@@ -8,31 +8,33 @@
 
 using namespace std;
 */
-double const maxx=0.78;
-double const maxy=0.56;
-int const arnum=16;//even
-int num,flavour;
-double x,y,pt,charge;
-double mineta=0;
-double minphi=0;
-double maxeta=0;
-double maxphi=0;
-double maxpt=0;
-double arpt[arnum*2+1][arnum*2+1];
+int all=1;
+double const maxx=0.665/2;
+double const maxy=0.542/2;
+int const arnum=32;//even number
+int num,flavour,buflav,chek;
+double x,y,pt;
+int charge;
+double mineta=0,minphi=0,maxeta=0,maxphi=0;
+double maxnpt=0,maxcpt=0,maxmul=0;
+double arpt[arnum*2+1][arnum*2+1][3];
 int bbb=arnum*2+1;
-double bx=2*maxx/(2*arnum+1);
-double by=2*maxy/(2*arnum+1);
+double bx=2.*maxx/(2.*arnum+1.);
+double by=2.*maxy/(2.*arnum+1.);
 string dummy;
-ifstream file ("array.txt");
+ifstream file ("data.txt");
 getline(file,dummy);
-TCanvas *c1 = new TCanvas("c1","mmmm",1000,1000);
-int ccc=7;
+TCanvas *c1 = new TCanvas("c1","mmmm",800,800);
+//TCanvas *c2 = new TCanvas("c2","mmmm",800,800);
+int ccc=1;
 c1->Divide(ccc,ccc);
-//TH2F *h1 = new TH2F("h1","h1",20,-maxx,maxx,20,-maxy,maxy);
-for(int nnn=0;nnn<ccc*ccc;nnn++){
+TH2F *h1 = new TH2F("h1","h1",33,-maxx,maxx,33,-maxy,maxy);
+for(int nnn=-1;nnn<ccc*ccc;nnn++){
 for(int i=0;i<bbb;i++){
 for(int j=0;j<bbb;j++){
-arpt[i][j]=0;
+for(int k=0;k<3;k++){
+arpt[i][j][k]=0.;
+}
 }
 }
 while (file >> num >> flavour >> x >> y >> pt >> charge){
@@ -40,29 +42,47 @@ if(x<0 && x<mineta){mineta=x;}
 if(x>0 && x>maxeta){maxeta=x;}
 if(y<0 && y<minphi){minphi=y;}
 if(y>0 && y>maxphi){maxphi=y;}
-if(num!=nnn){break;}
+if(all==0 && num!=nnn){chek=1;break;}
+if(chek==1){buflav=flavour;chek=0;}
+if(flavour==0){continue;}
 for(int i=0;i<=arnum;i++){
-if(abs(x)>=bx*i && abs(x)<bx*(i+1)){
+if(abs(x)>=bx*(i-0.5) && abs(x)<bx*(i+0.5)){
+for(int j=0;j<=arnum;j++){
+if(abs(y)>=by*(j-0.5) && abs(y)<by*(j+0.5)){
 if(x>=0){
-for(int j=0;j<=arnum;j++){
-if(abs(y)>=by*j && abs(y)<by*(i+1)){
 if(y>=0){
-arpt[arnum+i][arnum+j]+=pt;
+if(charge==0){arpt[arnum+i][arnum+j][0]+=pt;
+//arpt[arnum+i][arnum+j][2]+=1;
+}
+else{arpt[arnum+i][arnum+j][1]+=pt;
+arpt[arnum+i][arnum+j][2]+=1;
+}
 }
 else{
-arpt[arnum+i][arnum-j]+=pt;
+if(charge==0){arpt[arnum+i][arnum-j][0]+=pt;
+//arpt[arnum+i][arnum-j][2]+=1;
 }
+else{arpt[arnum+i][arnum-j][1]+=pt;
+arpt[arnum+i][arnum-j][2]+=1;
 }
 }
 }
 else{
-for(int j=0;j<=arnum;j++){
-if(abs(y)>=by*j && abs(y)<by*(i+1)){
 if(y>=0){
-arpt[arnum-i][arnum+j]+=pt;
+if(charge==0){arpt[arnum-i][arnum+j][0]+=pt;
+//arpt[arnum-i][arnum+j][2]+=1;
+}
+else{arpt[arnum-i][arnum+j][1]+=pt;
+arpt[arnum-i][arnum+j][2]+=1;
+}
 }
 else{
-arpt[arnum-i][arnum-j]+=pt;
+if(charge==0){arpt[arnum-i][arnum-j][0]+=pt;
+//arpt[arnum-i][arnum-j][2]+=1;
+}
+else{arpt[arnum-i][arnum-j][1]+=pt;
+arpt[arnum-i][arnum-j][2]+=1;
+}
 }
 }
 }
@@ -72,40 +92,52 @@ arpt[arnum-i][arnum-j]+=pt;
 
 //TBox *b = new TBox(j/33,(33-1-i)/33,(j+1)/33,(33-i)/33);
 //double col
-//h1->Fill(x,y);
+h1->Fill(x,y);
 //cout<<"x "<< x<<" "<<"y "<<y<<" "<<"pt "<<pt<<" "<<"charge "<<charge<<endl;
+
 }
-maxpt=0;
-for(int j=0;j<bbb;j++){
-for(int i=0;i<bbb;i++){
-if(maxpt<arpt[i][j]){
-maxpt=arpt[i][j];}
+if(all==0 && nnn==-1){continue;}
+maxnpt=0.;
+maxcpt=0.;
+maxmul=0.;
+for(int j=0;j<bbb;j++){for(int i=0;i<bbb;i++){
+if(maxnpt<arpt[i][j][0]){maxnpt=arpt[i][j][0];}
+if(maxcpt<arpt[i][j][1]){maxcpt=arpt[i][j][1];}
+if(maxmul<arpt[i][j][2]){maxmul=arpt[i][j][2];}
+
 }}
-c1->cd(nnn+1);
+if(all==1){c1->cd(1);}
+else{c1->cd(nnn+1);}
+
 float bb1=1./bbb;
 for(int j=0;j<bbb;j++){
 for(int i=0;i<bbb;i++){
-//cout<<floor(arpt[i][j])<<"\t";
+//cout<<floor(arpt[i][j][2])<<" ";
 TBox *b= new TBox(i*bb1,j*bb1,(i+1)*bb1,(j+1)*bb1);
-Float_t ptcolor=Float_t(255*arpt[i][j]/maxpt);
-if(i==16 && j==16){ b->SetFillColor(TColor::GetColor(ptcolor,0*ptcolor,ptcolor));}
-else{ b->SetFillColor(TColor::GetColor(ptcolor,ptcolor,ptcolor));}
+Float_t nptcol=Float_t(255.*(arpt[i][j][0]/maxnpt));
+Float_t cptcol=Float_t(255.*(arpt[i][j][1]/maxcpt));
+Float_t mulcol=Float_t(255.*(arpt[i][j][2]/maxmul));
+//if(i==16 && j==16){ b->SetFillColor(TColor::GetColor(ptcolor,ptcolor,0*ptcolor));}
+if(i==0 && j==0 && buflav==21){ b->SetFillColor(TColor::GetColor(0,255,0));}
+else{ b->SetFillColor(TColor::GetColor(nptcol,cptcol,mulcol));}
 //b->SetFillColor(TColor::GetColor(i,j,i));
 b->Draw();
 }
 //cout<<endl;
 }
-cout<<flavour<<endl;
+cout<<buflav<<" "<<maxcpt<<" "<<maxmul<<endl;
+if(all==1){break;}
 }
+
 /*tfile=new TFile("result.root","recreate");
 c1->Write("result.root");
 tfile->Close();*/
 /*TBox *d= new TBox(.10,.10,.20,.20);
 d->SetFillColor(TColor::GetColor(55,144,255));
 d->Draw();*/
-//c1->cd(1);
-//ih1->Draw("colz");
+//c2->cd(1);
+//h1->Draw("colz");
 cout<<"mineta "<<mineta<<"\t"<<"maxeta "<<maxeta<<"\t"<<"minphi "<<minphi<<"\t"<<"maxphi "<<maxphi<<endl;
-cout<<"maxpt "<<maxpt<<endl;
+cout<<"maxnpt "<<maxnpt<<endl;
 //cout<<dummy<<endl;
 }

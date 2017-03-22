@@ -89,14 +89,14 @@ box=[]
 num=0
 ke=0
 for iev,event in enumerate(events):
-	if(iev>10):break
+#	if(iev>10):break
 	box.append([])
 	event.getByLabel(jetLabel, jets)
 	print "\nEvent %d: run %6d, lumi %4d, event %12d" % (ke,event.eventAuxiliary().run(), event.eventAuxiliary().luminosityBlock(),event.eventAuxiliary().event())
     #https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_X/DataFormats/PatCandidates/interface/Jet.h
 	kj=0
 	for i,jet in enumerate(jets.product()):
-		if(i>10):break
+#		if(i>10):break
 		print "jet %3d: pt %5.1f, eta %+4.2f, mass %5.1f, partonFlavour %3d" % (i, jet.pt(), jet.eta(), jet.mass(), jet.partonFlavour())
 		if(jet.partonFlavour()==0):continue
 		box[ke].append([jet.partonFlavour()])
@@ -259,11 +259,12 @@ for iev,event in enumerate(events):
 #	print "------------------------------------------------------"
 
 
-f = open("array.txt",'w')
-f.write("//number jetflavour deta dphi pt charge\n")
+f = open("data.txt",'w')
+f.write("//number jetflavour deta dphi pt charge 0 0 0 0 0 0 line is dummy\n")
 			#box[iev][i].append([dau.pt(),deta,dphi,dau.charge()])
 for i in range(len(box)):
 	for j in range(len(box[i])):
+		f.write(str(num)+'\t0\t0\t0\t0\t0\n')
 		line=str(num)+'\t'+str(box[i][j][0])+'\t'
 		num+=1;
 		#print box[i][j][0]
@@ -282,8 +283,8 @@ f.close()
 #print len(box[i][j])
 #print box[0][0][0]
 #print box[0][0][1][1]
-tfile.Write()
-tfile.Close()
+#tfile.Write()
+#tfile.Close()
 
 
 print "-----------------------------------------------------"
