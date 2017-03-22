@@ -20,7 +20,7 @@ process.load('JetMETCorrections.Configuration.DefaultJEC_cff')
 process.load('RecoJets.JetProducers.QGTagger_cfi')
 process.QGTagger.srcJets          = cms.InputTag('ak4PFJetsCHS')      # Could be reco::PFJetCollection or pat::JetCollection (both AOD and miniAOD)
 process.QGTagger.jetsLabel        = cms.string('QGL_AK4PFchs')        # Other options: see https://twiki.cern.ch/twiki/bin/viewauth/CMS/QGDataBaseVersion
-process.QGTagger.jec              = cms.string('ak4PFCHSL1FastL2L3')  # Provide the jet correction service if your jets are uncorrected, otherwise keep empty
+#process.QGTagger.jec              = cms.string('ak4PFCHSL1FastL2L3')  # Provide the jet correction service if your jets are uncorrected, otherwise keep empty
 
 # Use TFileService to put trees from different analyzers in one file
 process.TFileService = cms.Service("TFileService", 
@@ -39,7 +39,7 @@ process.jetAnalyser = cms.EDAnalyzer("jetAnalyser",
     csvInputTag			= cms.InputTag('pfCombinedInclusiveSecondaryVertexV2BJetTags'),
     minJetPt			= cms.untracked.double(20.),
     deltaRcut			= cms.untracked.double(0.4),
-    qgInputTag			= cms.InputTag('QGTagger'),
+    qgInputTag			= cms.InputTag('QGTagger','qgLikelihood'),
 )
 
 process.ak8PFCHSL1FastL2L3 = process.ak8PFL2L3.clone()
@@ -53,4 +53,4 @@ process.fatJetAnalyser.deltaRcut	   = cms.untracked.double(0.8)
 process.fatJetAnalyser.csvInputTag	   = cms.InputTag('')
 process.fatJetAnalyser.qgInputTag 	   = cms.InputTag('')
 
-process.p = cms.Path(process.jetAnalyser+process.fatJetAnalyser)
+process.p = cms.Path(process.QGTagger+process.jetAnalyser+process.fatJetAnalyser)

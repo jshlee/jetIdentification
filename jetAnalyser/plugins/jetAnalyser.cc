@@ -238,10 +238,8 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
 	jetIdLevel	= jetId(recoJet) + jetId(recoJet, false, true) + jetId(recoJet, true); 
 	bTag		= csvInputTag.label().empty() ? 0 : (*bTagHandle)[jetRef];
 	// cms qgLikelihood
-	qgLikelihood_ = qgInputTag.label().empty() ? 0 : (*qgHandle)[jetRef];
-      
-	/*    qg		= (*qgHandle)[jetRef];
-	      axis2		= (*axis2Handle)[jetRef];
+	qgLikelihood_ = qgInputTag.label().empty() ? 0 : (*qgHandle)[jetRef];      
+	/*    axis2		= (*axis2Handle)[jetRef];
 	      mult		= (*multHandle)[jetRef];
 	      ptD		= (*ptDHandle)[jetRef];*/
       }
@@ -251,12 +249,12 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
       // <(") HERE
       // //
     
-      dau_jetNum_->clear();
-      dau_ptnId_->clear();
-      dau_charge_->clear();
-      dau_deta_->clear();
-      dau_dphi_->clear();
-      dau_pt_->clear();
+      dau_jetNum_ = new std::vector<int>();
+      dau_ptnId_ = new std::vector<int>();
+      dau_charge_ = new std::vector<int>();
+      dau_deta_ = new std::vector<float>();
+      dau_dphi_ = new std::vector<float>();
+      dau_pt_ = new std::vector<float>();
     
       std::vector< std::vector<float> > jetMat = makeJetMat(&*jet, vertexCollection, jetNum, partonId);
       for(auto row = jetMat.begin(); row != jetMat.end(); ++row){
@@ -284,6 +282,12 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
       }
  
       tree->Fill();
+      delete dau_jetNum_;
+      delete dau_ptnId_;
+      delete dau_charge_;
+      delete dau_deta_;
+      delete dau_dphi_;
+      delete dau_pt_;
     }
 
 
@@ -293,7 +297,6 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
 //Begin job: create vectors and set up tree
 void jetAnalyser::beginJob(){
   for(auto v : {&closebyJetdR, &closebyJetPt}) *v = new std::vector<float>();
-
   tree = fs->make<TTree>("jetAnalyser","jetAnalyser");
   tree->Branch("nEvent" ,			&nEvent, 			"nEvent/I");
   tree->Branch("nPileUp",			&nPileUp, 			"nPileUp/I");
