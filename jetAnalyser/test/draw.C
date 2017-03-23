@@ -8,7 +8,7 @@
 
 using namespace std;
 */
-int all=1;
+int all=0;
 double const maxx=0.665/2;
 double const maxy=0.542/2;
 int const arnum=32;//even number
@@ -22,11 +22,11 @@ int bbb=arnum*2+1;
 double bx=2.*maxx/(2.*arnum+1.);
 double by=2.*maxy/(2.*arnum+1.);
 string dummy;
-ifstream file ("data.txt");
+ifstream file ("array.txt");
 getline(file,dummy);
 TCanvas *c1 = new TCanvas("c1","mmmm",800,800);
 //TCanvas *c2 = new TCanvas("c2","mmmm",800,800);
-int ccc=1;
+int ccc=3;
 c1->Divide(ccc,ccc);
 TH2F *h1 = new TH2F("h1","h1",33,-maxx,maxx,33,-maxy,maxy);
 for(int nnn=-1;nnn<ccc*ccc;nnn++){
@@ -119,7 +119,7 @@ Float_t cptcol=Float_t(255.*(arpt[i][j][1]/maxcpt));
 Float_t mulcol=Float_t(255.*(arpt[i][j][2]/maxmul));
 //if(i==16 && j==16){ b->SetFillColor(TColor::GetColor(ptcolor,ptcolor,0*ptcolor));}
 if(i==0 && j==0 && buflav==21){ b->SetFillColor(TColor::GetColor(0,255,0));}
-else{ b->SetFillColor(TColor::GetColor(nptcol,cptcol,mulcol));}
+else{ b->SetFillColor(TColor::GetColor(cptcol,nptcol,mulcol));}
 //b->SetFillColor(TColor::GetColor(i,j,i));
 b->Draw();
 }
