@@ -13,9 +13,9 @@ def get_data(path):
     npt   = data[:, 1+size: 1+2*size]
     cmul  = data[:, 1+2*size:]
     # merge
-    flat = np.array( map(merge, cpt, npt, cmul) )
+    flats = np.array( map(merge, cpt, npt, cmul) )
     # reshape
-    images = np.array( map(lambda flat: flat.reshape((33,33,3)), flats) )
+    images = np.array( map(lambda x: x.reshape((33,33,3)), flats) )
     return images, labels
 
 if __name__ == "__main__":
