@@ -30,7 +30,7 @@ def read_and_decode(filename_queue):
     label.set_shape([2])
     return image, label
 
-def inputs(is_train, filename, batch_size=100, num_epochs=10000):
+def inputs(is_train, filename, batch_size=100, num_epochs=500):
     if is_train:
         filename = ''.join([filename, '_train','.tfrecords'])
     else:
@@ -49,10 +49,10 @@ def inputs(is_train, filename, batch_size=100, num_epochs=10000):
 # http://stackoverflow.com/questions/39187764/tensorflow-efficient-feeding-of-eval-train-data-using-queue-runners
 
 def get_train_inputs(is_training):
-    return inputs(is_train=True, filename='jet15_rgb')
+    return inputs(is_train=True, filename='yunjae')
 
 def get_eval_inputs(is_training):
-    return inputs(is_train=False, filename='jet15_rgb')
+    return inputs(is_train=False, filename='yunjae')
 
 def get_mixed_inputs(is_training):
     train_inputs = get_train_inputs(None)
