@@ -30,7 +30,18 @@ def read_and_decode(filename_queue):
     label.set_shape([2])
     return image, label
 
-def inputs(is_train, filename, batch_size=100, num_epochs=500):
+def inputs(path, batch_size=100, num_epochs=500):
+    with tf.name_scope('input'):
+        filename_queue = tf.train.string_input_producer(
+            [path], num_epochs=num_epochs)
+        image, label = read_and_decode(filename_queue)
+        images, sparse_labels = tf.train.shuffle_batch(
+            [image, label], batch_size=batch_size, num_threads=2,
+            capacity=1000 + 3 * batch_size,
+            min_after_dequeue=1000)
+    return images, sparse_labels
+   
+def inputs_with_cond(is_train, filename, batch_size=100, num_epochs=500):
     if is_train:
         filename = ''.join([filename, '_train','.tfrecords'])
     else:
@@ -49,10 +60,10 @@ def inputs(is_train, filename, batch_size=100, num_epochs=500):
 # http://stackoverflow.com/questions/39187764/tensorflow-efficient-feeding-of-eval-train-data-using-queue-runners
 
 def get_train_inputs(is_training):
-    return inputs(is_train=True, filename='yunjae')
+    return inputs_with_cond(is_train=True, filename='yunjaeo')
 
 def get_eval_inputs(is_training):
-    return inputs(is_train=False, filename='yunjae')
+    return inputs_with_cond(is_train=False, filename='yunjaeo')
 
 def get_mixed_inputs(is_training):
     train_inputs = get_train_inputs(None)
