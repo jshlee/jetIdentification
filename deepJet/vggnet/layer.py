@@ -33,19 +33,17 @@ def variable_summaries(var):
         tf.summary.scalar('min', tf.reduce_min(var))
         tf.summary.histogram('histogram', var)
 
-def convolution_layer(input_tensor, kernel_shape, layer_name):
+def conv3(input_tensor, in_channels, out_channels, layer_name):
     with tf.name_scope(layer_name):
         # Convolution stage: Affine transform
         with tf.name_scope('kernel'):
             kernel_name = 'kernel_xavier_' + layer_name
-            kernel = xavier_init(name=''+layer_name, shape=kernel_shape, is_conv2d=True) 
-            variable_summaries(kernel)
+            kernel_shape = [3, 3, in_channels, out_channels]
+            kernel = xavier_init(name=kernel_name, shape=kernel_shape, is_conv2d=True) 
         with tf.name_scope('convolution'):
             conv = tf.nn.conv2d(input_tensor, kernel, strides=[1, 1, 1, 1], padding='SAME')
-            variable_summaries(conv)
         with tf.name_scope('biases'):
-            output_channel = kernel_shape[-1]
-            biases = bias_variable([output_channel])
+            biases = bias_variable([out_channels])
         with tf.name_scope('plus_biases'):
             preactivate = tf.nn.bias_add(conv, biases)
         # Detector stage: Nonlinearity (e.g. rectified linear unit)
@@ -53,38 +51,14 @@ def convolution_layer(input_tensor, kernel_shape, layer_name):
             activations = tf.nn.relu(preactivate)
         return activations
 
+
 def max_pooling_layer(input_tensor, layer_name):
     with tf.name_scope(layer_name):
         # Pooling stage 
         with tf.name_scope('max_pool'):
-            pool = tf.nn.max_pool(activations, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+            pool = tf.nn.max_pool(input_tensor, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
         return pool
 
-
-
-
-def convolutional_layer(input_tensor, kernel_shape, layer_name):
-    with tf.name_scope(layer_name):
-        # Convolution stage: Affine transform
-        with tf.name_scope('kernel'):
-            kernel_name = 'kernel_xavier_' + layer_name
-            kernel = xavier_init(name=''+layer_name, shape=kernel_shape, is_conv2d=True) 
-            variable_summaries(kernel)
-        with tf.name_scope('convolution'):
-            conv = tf.nn.conv2d(input_tensor, kernel, strides=[1, 1, 1, 1], padding='SAME')
-            variable_summaries(conv)
-        with tf.name_scope('biases'):
-            output_channel = kernel_shape[-1]
-            biases = bias_variable([output_channel])
-        with tf.name_scope('plus_biases'):
-            preactivate = tf.nn.bias_add(conv, biases)
-        # Detector stage: Nonlinearity (e.g. rectified linear unit)
-        with tf.name_scope('activations'):
-            activations = tf.nn.relu(preactivate)
-        # Pooling stage 
-        with tf.name_scope('max_pool'):
-            pool = tf.nn.max_pool(activations, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-        return pool
 
 def fully_connected_layer(input_tensor, input_dim, output_dim, layer_name, act_ftn=tf.nn.relu):
     with tf.name_scope(layer_name):

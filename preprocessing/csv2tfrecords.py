@@ -3,10 +3,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import datetime
 
 import numpy as np
 import tensorflow as tf
+
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+import drawer
 
 def get_time():
     return datetime.datetime.now().strftime('%H:%M:%S')
