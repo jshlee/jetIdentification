@@ -12,7 +12,7 @@ import model
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from input_pipeline import inputs
 from roc import ROC
-from drawer import get_date, LogDirs, ckpt_parser
+from drawer import get_date, make_dir, ckpt_parser
 
 def eval_once(global_step, ckpt_file, writer, tfrecord_file, roc_path):
     with tf.Graph().as_default() as g:
@@ -49,7 +49,6 @@ def eval_once(global_step, ckpt_file, writer, tfrecord_file, roc_path):
                 print('%d steps' % step)
             finally:
                 roc.eval_roc()
-                roc.save_roc(roc_path)
                 roc.plot_roc_curve(step=global_step, title='VGGNet', save_path=roc_path)
                 coord.request_stop()
                 coord.join(threads)
@@ -67,12 +66,8 @@ def evaluate(ckpt_path, tfevents_path, tfrecords_path, roc_path):
         writer.close()
 
 if __name__ == '__main__':
-    flags = tf.app.flags
-    FLAGS = flags.FLAGS
-    flags.DEFINE_string('data_dir', '../data/tfrecords/jet15_rgb_validation.tfrecords', 'Directory to put the validation data')
-    flags.DEFINE_string('logs_dir', '../logs/vggnet-0', 'Directory to save log files')
-    log = LogDirs(dpath = FLAGS.logs_dir)
-    evaluate(ckpt_path = log.ckpt,
+    log = LogDirs(dpath = '../../logs/vggnet-0')
+    evalutate(ckpt_path = log.ckpt,
               tfevents_path = log.tfevents,
-              tfrecords_path = FLAGS.data_dir,
+              tfrecords_path = '../../data/tfrecords/jet15_rgb_validation.tfrecords',
               roc_path = log.roc_curve)

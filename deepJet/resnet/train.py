@@ -65,18 +65,10 @@ def train(tfrecords_path, tfevents_path, ckpt_path, batch_size, num_epochs):
 
 
 if __name__ == '__main__':
-    flags = tf.app.flags
-    FLAGS = flags.FLAGS
-    # flags.DEFINE_string(flag_name, default_value, docstring)
-    flags.DEFINE_string('data_dir', '../data/tfrecords/jet15_rgb_train.tfrecords', 'Directory to put the training data')
-    flags.DEFINE_string('logs_dir', '../logs/vggnet-0', 'Directory to save log files')
-    flags.DEFINE_integer('batch_size', 100, 'batch size')
-    flags.DEFINE_integer('epochs', 10, 'epochs')
-    #############################
-    log = LogDirs(dpath = FLAGS.logs_dir)
+    log = LogDirs(dpath = '../logs/resnet-0')
     log.mkdirs()
-    train(tfrecords_path = FLAGS.data_dir,
+    train(tfrecords_path = '../data/tfrecords/jet15_rgb_train.tfrecords',
           tfevents_path = log.tfevents_train,
           ckpt_path = log.ckpt,
-          batch_size = FLAGS.batch_size,
-          num_epochs=FLAGS.epochs)
+          batch_size = 100,
+          num_epochs=10)

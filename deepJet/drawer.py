@@ -59,14 +59,14 @@ class LogDirs:
         make_dir(self.roc_curve)        
 
 
-def ckpt_parser(path, with_step=False):
+def ckpt_parser(path, with_step=True):
     with open(os.path.join(path, 'checkpoint')) as f:
         lines = f.readlines()[1:]
     result = []
     if with_step:
         for l in lines:
             name = l.split('"')[1]
-            step = name.split('-')[1]
+            step = int(name.split('-')[1])
             result.append({'path': os.path.join(path, name), 'step': step})
         return result
     else:

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
@@ -13,7 +14,13 @@ class ROC:
         self.fpr, self.tpr, _ = roc_curve(self.labels, self.preds)
         self.fnr = 1 - self.fpr
         self.auc = auc(self.fpr, self.tpr)
-    def plot_roc_curve(self, step, title, save_path='../data/roc_curve/'):
+
+    def save_roc(self, save_path):
+        self.logs = np.vstack([self.tpr, self.fnr, self.fpr]).T
+        lname = os.path.join(save_path, 'roc_log_auc_%.2f.csv' % self.auc)
+        np.savetxt(lname, self.logs, delimiter=',', header='tpr, fnr, fpr')
+
+    def plot_roc_curve(self, step, title, save_path, show=False):
         fig = plt.figure()
         plt.plot(self.tpr, self.fnr, color='darkorange',
                  lw=2, label='ROC curve (area = %0.2f)' % self.auc)
@@ -25,8 +32,9 @@ class ROC:
         plt.ylabel('Gluon Jet Rejection (FNR)')
         plt.title('%s-%d / ROC curve' % (title, step))
         plt.legend(loc='lower left')
-        filename = save_path + 'run-' + str(step) + '.png'
+        plt.grid()
+        filename = save_path + 'run-' + '{0:06}'.format(str(step)) + '.png'
         print(filename)
-        plt.savefig(filename) 
-        plt.show()
-
+        plt.savefig(filename)
+        if show:
+            plt.show()
