@@ -1,12 +1,21 @@
 import FWCore.ParameterSet.Config as cms
+
+# The top level of a configuration program is a Process object.
+
 process = cms.Process("jetAnalyser")
 
 # Settings for local tests
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+
+from utils import get_vstring
+
+num_root_file = 100 
+fnames = get_vstring(num_files=num_root_file)
+
 process.source = cms.Source("PoolSource", 
-    fileNames = cms.untracked.vstring('file:/pnfs/user/mc/RunIISummer16DR80Premix/QCD_Pt-15to7000_TuneCUETP8M1_FlatP6_13TeV_pythia8/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/110000/00D5AF84-33B7-E611-8E07-D067E5F91B8A.root')
+    fileNames = cms.untracked.vstring(*fnames)
 )
 
 # Standard configurations
@@ -23,8 +32,11 @@ process.QGTagger.jetsLabel        = cms.string('QGL_AK4PFchs')        # Other op
 #process.QGTagger.jec              = cms.string('ak4PFCHSL1FastL2L3')  # Provide the jet correction service if your jets are uncorrected, otherwise keep empty
 
 # Use TFileService to put trees from different analyzers in one file
+
+outfname = 'jet_pythia_%d.root' % num_root_file
+
 process.TFileService = cms.Service("TFileService", 
-    fileName = cms.string("jet.root"),
+    fileName = cms.string(outfname),
     closeFileFast = cms.untracked.bool(True)
 )
 

@@ -75,7 +75,7 @@ private:
   TTree 						*tree;
 
   float rho, pt, eta, axis2, axis1, ptD, bTag, ptDoubleCone, motherMass, pt_dr_log, qgLikelihood_;
-  int nEvent, nPileUp, nPriVtxs, mult, nmult, cmult, partonId, jetIdLevel, nGenJetsInCone, nGenJetsForGenParticle, nJetsForGenParticle, motherId;
+  int nEvent, nPileUp, nPriVtxs, mult, nmult, cmult, partonId, jetIdLevel, nGenJetsInCone, nGenJetsForGenParticle, nJetsForGenParticle, motherId, nJets, nGenJets, nMatchedJets;
   bool matchedJet, isPatJet_;
   std::vector<float> *closebyJetdR, *closebyJetPt;
   std::vector<int>   *dau_jetNum_, *dau_ptnId_, *dau_charge_;
@@ -107,17 +107,11 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
   qgToken = consumes<edm::ValueMap<float> >( edm::InputTag(qgInputTag));
 }
 
-  void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup){
 
-    //
-    // <(") HERE
-    //
-    std::ofstream     outJets;
-    outJets.open("yangJet.csv");
-    outJets << "# jetNumbering, pdgid, deta, dphi, pt, charge" << endl;
+void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup){
 
     for(auto v : {closebyJetdR, closebyJetPt})
-      v->clear();
+        v->clear();
 
     nEvent = (int) iEvent.id().event();
 
@@ -145,158 +139,165 @@ jetAnalyser::jetAnalyser(const edm::ParameterSet& iConfig) :
     edm::Handle< reco::JetTagCollection > bTagHandle;  
     isPatJet_ = isPatJetCollection(jets);
     if( !isPatJet_ )
-      if(!csvInputTag.label().empty())
-	iEvent.getByToken(bTagToken, bTagHandle);
+        if(!csvInputTag.label().empty())
+	    iEvent.getByToken(bTagToken, bTagHandle);
 
     if( !isPatJet_ )
-      JEC = JetCorrector::getJetCorrector(jecService, iSetup);
+        JEC = JetCorrector::getJetCorrector(jecService, iSetup);
 
     edm::Handle<edm::ValueMap<float>> qgHandle;
     if(!qgInputTag.label().empty())
-      iEvent.getByToken(qgToken, qgHandle);
+        iEvent.getByToken(qgToken, qgHandle);
   
     // Get number of primary vertices, pile-up and rho
     nPriVtxs = vertexCollection->size();
     rho      = (float) *rhoHandle;
     nPileUp  = getPileUp(pupInfo);
 
-    //
-    //  <(") HERE
-    //  just jet numbering
-    //
     int jetNum = 0;
+
+    nJets = 0;
+    nMatchedJets = 0;
+    nGenJets = genJets->size();
+    // for (auto &jet : jets) {
+    for(auto jet = jets->begin();  jet != jets->end(); ++jet){
+	if (jet->pt() > minJetPt) {
+	   nJets++;
+	
+            // Parton Id matching
+	    auto matchedGenParticle = getMatchedGenParticle(&*jet, genParticles);
+	    matchedJet = (matchedGenParticle != genParticles->end());
+	    if (matchedJet)
+	        nMatchedJets++;
+	}
+    }
 
     // Start jet loop (the tree is filled for each jet separately)
     for(auto jet = jets->begin();  jet != jets->end(); ++jet){
-      // If miniAOD, jets are already corrected
-      // If RECO, we correct them on the fly
-      if(isPatJet_)
-	pt = jet->pt();
-      else
-	pt = jet->pt()*JEC->correction(*jet, iEvent, iSetup);
+        // If miniAOD, jets are already corrected
+        // If RECO, we correct them on the fly
+        if(isPatJet_)
+   	    pt = jet->pt();
+        else
+	    pt = jet->pt()*JEC->correction(*jet, iEvent, iSetup);
 
-      if(pt < minJetPt)
-	continue;
+        if(pt < minJetPt)
+    	    continue;
     
-      bool overLappingJet = false;
-      // Remove Closeby jets for now. do late - Closeby jet study variables
-      for(auto otherJet = jets->begin(); otherJet != jets->end(); ++otherJet){
-	if(otherJet == jet)
-	  continue;
-	float dR = reco::deltaR(*jet, *otherJet);
-	if(dR > deltaRcut)
-	  continue;
-	overLappingJet = true;
-	// closebyJetdR->push_back(dR);
-	// if( isPatJet_ )
-	// 	closebyJetPt->push_back(otherJet->pt());
-	// else
-	// 	closebyJetPt->push_back(otherJet->pt()*JEC->correction(*otherJet, iEvent, iSetup));
-      }
-      if (overLappingJet) continue;
+        bool overLappingJet = false;
+        // Remove Closeby jets for now. do late - Closeby jet study variables
+        for(auto otherJet = jets->begin(); otherJet != jets->end(); ++otherJet){
+	    if(otherJet == jet)
+	        continue;
+	    float dR = reco::deltaR(*jet, *otherJet);
+	    if(dR > deltaRcut)
+		continue;
+    	    overLappingJet = true;
+	    // closebyJetdR->push_back(dR);
+	    // if( isPatJet_ )
+	    // 	closebyJetPt->push_back(otherJet->pt());
+	    // else
+	    // 	closebyJetPt->push_back(otherJet->pt()*JEC->correction(*otherJet, iEvent, iSetup));
+        }
 
-      // Parton Id matching
-      auto matchedGenParticle = getMatchedGenParticle(&*jet, genParticles);
-      matchedJet = (matchedGenParticle != genParticles->end());
-      if(matchedJet){
-	partonId 			= matchedGenParticle->pdgId();
-	nJetsForGenParticle 	= countInCone(matchedGenParticle, jets);
-	nGenJetsForGenParticle 	= countInCone(matchedGenParticle, genJets);
-	if(matchedGenParticle->numberOfMothers() == 1){
-	  // Very experimental, but first tests shows it's good at finding W's and t's
-	  // A bit more difficult for QCD, where it's sometimes a quark, decaying into
-	  // quark+gluon, and sometimes just a proton with a lot of other QCD mess and
-	  // sometimes 2 mothers (mostly two quarks recoiling each other, but sometimes
-	  // also two quarks going into two gluons etc...)
-	  motherId		= matchedGenParticle->mother()->pdgId();
-	  motherMass		= matchedGenParticle->mother()->mass();
+        if (overLappingJet)
+            continue;
+
+        // Parton Id matching
+        auto matchedGenParticle = getMatchedGenParticle(&*jet, genParticles);
+        matchedJet = (matchedGenParticle != genParticles->end());
+
+        if(matchedJet){
+    	    partonId 			= matchedGenParticle->pdgId();
+	    nJetsForGenParticle 	= countInCone(matchedGenParticle, jets);
+	    nGenJetsForGenParticle 	= countInCone(matchedGenParticle, genJets);
+
+	    if(matchedGenParticle->numberOfMothers() == 1){
+	        // Very experimental, but first tests shows it's good at finding W's and t's
+		// A bit more difficult for QCD, where it's sometimes a quark, decaying into
+		// quark+gluon, and sometimes just a proton with a lot of other QCD mess and
+		// sometimes 2 mothers (mostly two quarks recoiling each other, but sometimes
+		// also two quarks going into two gluons etc...)
+                 motherId		= matchedGenParticle->mother()->pdgId();
+        	 motherMass		= matchedGenParticle->mother()->mass();
+	    }
+	    else {
+		motherId		= 0;
+		motherMass		= 0;
+	    }
+        }
+	else {
+	    partonId 			= 0;
+	    nJetsForGenParticle 	= 0;
+	    nGenJetsForGenParticle 	= 0;
+	    motherId			= 0;
+	    motherMass    		= 0;
+	    continue;
+	    // To keep the tuples small, we only save matched jets
+	}
+
+        nGenJetsInCone 		= countInCone(jet, genJets);
+
+        if(isPatJet_){
+	    auto patJet 	= static_cast<const pat::Jet*> (&*jet);
+	    jetIdLevel        	= jetId(patJet) + jetId(patJet, false, true) + jetId(patJet, true); 
+	    bTag		= patJet->bDiscriminator(csvInputTag.label());
 	}
 	else {
-	  motherId		= 0;
-	  motherMass		= 0;
+	    edm::RefToBase<reco::Jet> jetRef(edm::Ref<edm::View<reco::Jet>>(jets, (jet - jets->begin())));
+	    auto recoJet 	= static_cast<const reco::PFJet*>(&*jet);
+	    jetIdLevel	= jetId(recoJet) + jetId(recoJet, false, true) + jetId(recoJet, true); 
+	    bTag		= csvInputTag.label().empty() ? 0 : (*bTagHandle)[jetRef];
+	    // cms qgLikelihood
+	    qgLikelihood_ = qgInputTag.label().empty() ? 0 : (*qgHandle)[jetRef];      
+	    /*    axis2		= (*axis2Handle)[jetRef];
+		  mult		= (*multHandle)[jetRef];
+		  ptD		= (*ptDHandle)[jetRef];*/
 	}
-      }
-      else {
-	partonId 			= 0;
-	nJetsForGenParticle 	= 0;
-	nGenJetsForGenParticle 	= 0;
-	motherId			= 0;
-	motherMass		= 0;
-	continue;
-	// To keep the tuples small, we only save matched jets
-      }
-      nGenJetsInCone 		= countInCone(jet, genJets);
 
-      if(isPatJet_){
-	auto patJet 	= static_cast<const pat::Jet*> (&*jet);
-	jetIdLevel	= jetId(patJet) + jetId(patJet, false, true) + jetId(patJet, true); 
-	bTag		= patJet->bDiscriminator(csvInputTag.label());
-      }
-      else {
-	edm::RefToBase<reco::Jet> jetRef(edm::Ref<edm::View<reco::Jet>>(jets, (jet - jets->begin())));
-	auto recoJet 	= static_cast<const reco::PFJet*>(&*jet);
-	jetIdLevel	= jetId(recoJet) + jetId(recoJet, false, true) + jetId(recoJet, true); 
-	bTag		= csvInputTag.label().empty() ? 0 : (*bTagHandle)[jetRef];
-	// cms qgLikelihood
-	qgLikelihood_ = qgInputTag.label().empty() ? 0 : (*qgHandle)[jetRef];      
-	/*    axis2		= (*axis2Handle)[jetRef];
-	      mult		= (*multHandle)[jetRef];
-	      ptD		= (*ptDHandle)[jetRef];*/
-      }
+	dau_jetNum_ = new std::vector<int>();
+	dau_ptnId_ = new std::vector<int>();
+	dau_charge_ = new std::vector<int>();
+	dau_deta_ = new std::vector<float>();
+	dau_dphi_ = new std::vector<float>();
+	dau_pt_ = new std::vector<float>();
 
-      /////////////////////////////////////////////////////////////////////////////////////////////////////
-      // 
-      // <(") HERE
-      // //
-    
-      dau_jetNum_ = new std::vector<int>();
-      dau_ptnId_ = new std::vector<int>();
-      dau_charge_ = new std::vector<int>();
-      dau_deta_ = new std::vector<float>();
-      dau_dphi_ = new std::vector<float>();
-      dau_pt_ = new std::vector<float>();
-    
-      std::vector< std::vector<float> > jetMat = makeJetMat(&*jet, vertexCollection, jetNum, partonId);
-      for(auto row = jetMat.begin(); row != jetMat.end(); ++row){
-	for(auto col = row->begin(); col != row->end(); ++col){
-	  if( col != --(row->end()) )
-	    outJets << *col << ',';
-	  else
-	    outJets << *col << endl; 
+	    
+	std::vector< std::vector<float> > jetMat = makeJetMat(&*jet, vertexCollection, jetNum, partonId);
+
+	jetNum++;
+
+	std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log) = calcVariables(&*jet, vertexCollection);
+	axis2 			= -std::log(axis2);
+	axis1                   = -std::log(axis1);
+	eta			= jet->eta();
+	//  qg = qglcalc->computeQGLikelihood(pt, eta, rho, {(float) mult, ptD, axis2});
+	if(mult < 2) continue;  
+      
+	ptDoubleCone = 0;
+	for(auto candidate = candidates->begin(); candidate != candidates->end(); ++candidate){
+	    if(reco::deltaR(*candidate, *jet) < deltaRcut*2)
+		ptDoubleCone += candidate->pt();
 	}
-      }
+   
+	tree->Fill();
 
-      jetNum++;
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////
+	delete dau_jetNum_;
+	delete dau_ptnId_;
+	delete dau_charge_;
+	delete dau_deta_;
+	delete dau_dphi_;
+	delete dau_pt_;
+	}
 
-      std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log) = calcVariables(&*jet, vertexCollection);
-      axis2 			= -std::log(axis2);
-      axis1                   = -std::log(axis1);
-      eta			= jet->eta();
-      //  qg = qglcalc->computeQGLikelihood(pt, eta, rho, {(float) mult, ptD, axis2});
-      if(mult < 2) continue;  
-    
-      ptDoubleCone = 0;
-      for(auto candidate = candidates->begin(); candidate != candidates->end(); ++candidate){
-	if(reco::deltaR(*candidate, *jet) < deltaRcut*2) ptDoubleCone += candidate->pt();
-      }
- 
-      tree->Fill();
-      delete dau_jetNum_;
-      delete dau_ptnId_;
-      delete dau_charge_;
-      delete dau_deta_;
-      delete dau_dphi_;
-      delete dau_pt_;
+
     }
-
-
-    outJets.close();
-  }
 
 //Begin job: create vectors and set up tree
 void jetAnalyser::beginJob(){
-  for(auto v : {&closebyJetdR, &closebyJetPt}) *v = new std::vector<float>();
+  for(auto v : {&closebyJetdR, &closebyJetPt})
+      *v = new std::vector<float>();
+
   tree = fs->make<TTree>("jetAnalyser","jetAnalyser");
   tree->Branch("nEvent" ,			&nEvent, 			"nEvent/I");
   tree->Branch("nPileUp",			&nPileUp, 			"nPileUp/I");
@@ -331,6 +332,9 @@ void jetAnalyser::beginJob(){
   tree->Branch("dau_deta",		"vector<float>",        &dau_deta_);
   tree->Branch("dau_dphi",		"vector<float>",        &dau_dphi_);
   tree->Branch("dau_pt",		"vector<float>",        &dau_pt_);
+  tree->Branch("nJets",                 &nJets,                 "nJets/I");
+  tree->Branch("nMatchedJets",          &nMatchedJets,          "nMatchedJets/I");
+  tree->Branch("nGenJets",              &nGenJets,              "nGenJets/I");
 }
 
 void jetAnalyser::endJob(){
@@ -367,10 +371,6 @@ bool jetAnalyser::isPackedCandidate(const reco::Candidate* candidate){
   return weAreUsingPackedCandidates;
 }
 
-// 
-// <(") HERE
-// jetNum, partonFlavour, deta, dphi, pt, charge
-//
 std::vector< std::vector<float> > jetAnalyser::makeJetMat(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC, int jetNum, int ptnId){
 
   std::vector< std::vector<float> >                       jetMat;
