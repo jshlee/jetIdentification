@@ -42,7 +42,7 @@ private:
   virtual void 						endJob() override;
   virtual void 						analyze(const edm::Event&, const edm::EventSetup&) override;
   template <class jetClass> bool 	                jetId(const jetClass *jet, bool tight = false, bool loose = false);
-  std::tuple<int, int, int, float, float, float, float> calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC);
+  std::tuple<int, int, int, float, float, float, float, float,float,float,float,float,float,float,float,float,int> calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC);
 
   //
   // <(") HERE
@@ -73,6 +73,11 @@ private:
   const JetCorrector 					*JEC;
   edm::Service<TFileService> 				fs;
   TTree 						*tree;
+
+  //http://jets.physics.harvard.edu/qvg/
+  //https://cds.cern.ch/record/2280190/files/SummerReport_Simonas_Drauksas.pdf -> GeoMoent = WidthMoment in the page
+  float dr, JetAngularity, GeoMoment, HalfPtMoment, DRSquareMoment, SmallDRPT, MassMoment, PTSquare, MyMoment;
+  int ParticleCount;
 
   float rho, pt, eta, axis2, axis1, ptD, bTag, ptDoubleCone, motherMass, pt_dr_log, qgLikelihood_;
   int nEvent, nPileUp, nPriVtxs, mult, nmult, cmult, partonId, jetIdLevel, nGenJetsInCone, nGenJetsForGenParticle, nJetsForGenParticle, motherId, nJets, nGenJets, nMatchedJets;
@@ -267,7 +272,7 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 	jetNum++;
 
-	std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log) = calcVariables(&*jet, vertexCollection);
+	std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log, dr, JetAngularity, GeoMoment, HalfPtMoment, DRSquareMoment, SmallDRPT, MassMoment, ParticleCount, PTSquare, MyMoment) = calcVariables(&*jet, vertexCollection);
 	axis2 			= -std::log(axis2);
 	axis1                   = -std::log(axis1);
 	eta			= jet->eta();
@@ -325,6 +330,18 @@ void jetAnalyser::beginJob(){
   tree->Branch("nJetsForGenParticle",   	&nJetsForGenParticle,   	"nJetsForGenParticle/I");
   tree->Branch("closebyJetdR",		"vector<float>",		&closebyJetdR);
   tree->Branch("closebyJetPt",		"vector<float>",		&closebyJetPt);
+
+  tree->Branch("dr",                            &dr,                            "dr/F");
+  tree->Branch("JetAngularity",                 &JetAngularity,                 "JetAngularity/F");
+  tree->Branch("GeoMoment",                     &GeoMoment,                     "GeoMoment/F");
+  tree->Branch("HalfPtMoment",                  &HalfPtMoment,                  "HalfPtMoment/F");
+  tree->Branch("DRSquareMoment",                &DRSquareMoment,                "DRSquareMoment/F");
+  tree->Branch("SmallDRPT",                     &SmallDRPT,                     "SmallDRPT/F");
+  tree->Branch("MassMoment",                    &MassMoment,                    "MassMoment/F");
+  tree->Branch("ParticleCount",                 &ParticleCount,                 "ParticleCount/I");
+  tree->Branch("PTSquare",                      &PTSquare,                      "PTSquare/F");
+  tree->Branch("MyMoment",                      &MyMoment,                      "MyMoment/F");
+
 
   tree->Branch("dau_jetNum",		"vector<int>",		&dau_jetNum_);
   tree->Branch("dau_ptnId",		"vector<int>",		&dau_ptnId_);
@@ -407,10 +424,16 @@ std::vector< std::vector<float> > jetAnalyser::makeJetMat(const reco::Jet *jet, 
 
 
 //Calculation of axis2, mult and ptD
-std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC){
+std::tuple<int, int, int, float, float, float, float, float,float,float,float,float,float,float,float,float,int> jetAnalyser::calcVariables(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC){
   float sum_weight = 0., sum_deta = 0., sum_dphi = 0., sum_deta2 = 0., sum_dphi2 = 0., sum_detadphi = 0., sum_pt = 0.;
   int mult = 0, nmult = 0, cmult = 0;
   float pt_dr_log = 0;
+
+  float dr = 0., JetAngularity = 0., GeoMoment = 0., HalfPtMoment = 0., DRSquareMoment = 0., SmallDRPT = 0., MassMoment = 0., PTSquare = 0., MyMoment = 0.;
+  int ParticleCount = 0;
+
+  float Pi = 3.141592;
+
 
   //Loop over the jet constituents
   for(auto daughter : jet->getJetConstituentsQuick()){
@@ -441,9 +464,24 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
 	++nmult;
       }
 
-      //Calculate pt_dr_log                                                                                                                                 
+      //Calculate pt_dr_log and some vars                                                                                                                                
       float dr = reco::deltaR(*jet, *part);
+      float theta = (Pi*dr)/(2*0.4);
+
       pt_dr_log += std::log(part->pt()/dr);
+
+      JetAngularity += (daughter->pt()*daughter->pt())*(powf((std::sin(theta)),-2))*((1-powf((std::cos(theta)),-3)))/(jet->mass()); // a = -2 
+      GeoMoment += (powf((part->pt()/jet->pt()),1))*(powf((dr/0.4),1));
+      HalfPtMoment += (powf((part->pt()/jet->pt()),1.5))*(powf((dr/0.4),0));
+      DRSquareMoment += (powf((part->pt()/jet->pt()),0))*(powf((dr/0.4),2));
+      if(dr < 0.1)
+        SmallDRPT += (powf((part->pt()/jet->pt()),1))*(powf((dr/0.4),0));
+      MassMoment += (powf((part->pt()/jet->pt()),1))*(powf((dr/0.4),2));
+      ParticleCount += (powf((part->pt()/jet->pt()),0))*(powf((dr/0.4),0));
+      PTSquare += (powf((part->pt()/jet->pt()),2))*(powf((dr/0.4),0));
+      MyMoment += (powf((part->pt()/jet->pt()),2))*(powf((dr/0.4),-1.5));
+
+
 
     }
     else {
@@ -488,9 +526,23 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
 	++nmult;
       }
 
-      //Calculate pt_dr_log                                                                                                                                 
+      //Calculate pt_dr_log and other vars                                                                                                                                
       float dr = reco::deltaR(*jet, *part);
+      float theta = (Pi*dr)/(2*0.4);
+
       pt_dr_log += std::log(part->pt()/dr);
+
+      JetAngularity += (daughter->pt()*daughter->pt())*(powf((std::sin(theta)),-2))*((1-powf((std::cos(theta)),-3)))/(jet->mass()); // a = -2 
+      GeoMoment += (powf((part->pt()/jet->pt()),1))*(powf((dr/0.4),1));
+      HalfPtMoment += (powf((part->pt()/jet->pt()),1.5))*(powf((dr/0.4),0));
+      DRSquareMoment += (powf((part->pt()/jet->pt()),0))*(powf((dr/0.4),2));
+      if(dr < 0.1)
+        SmallDRPT += (powf((part->pt()/jet->pt()),1))*(powf((dr/0.4),0));
+      MassMoment += (powf((part->pt()/jet->pt()),1))*(powf((dr/0.4),2));
+      ParticleCount += (powf((part->pt()/jet->pt()),0))*(powf((dr/0.4),0));
+      PTSquare += (powf((part->pt()/jet->pt()),2))*(powf((dr/0.4),0));
+      MyMoment += (powf((part->pt()/jet->pt()),2))*(powf((dr/0.4),-1.5));
+
     }
 
     float deta   = daughter->eta() - jet->eta();
@@ -523,7 +575,7 @@ std::tuple<int, int, int, float, float, float, float> jetAnalyser::calcVariables
   float axis2 = (a+b-delta > 0 ?  sqrt(0.5*(a+b-delta)) : 0);
   float axis1 = (a+b+delta > 0 ?  sqrt(0.5*(a+b+delta)) : 0);
   float ptD   = (sum_weight > 0 ? sqrt(sum_weight)/sum_pt : 0);
-  return std::make_tuple(mult, nmult, cmult,  ptD, axis2, axis1, pt_dr_log);
+  return std::make_tuple(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log, dr, JetAngularity, GeoMoment, HalfPtMoment, DRSquareMoment, SmallDRPT, MassMoment, ParticleCount, PTSquare, MyMoment);
 }
 
 //Calculate jetId for levels loose, medium and tight
