@@ -47,7 +47,7 @@ private:
   //
   // <(") HERE
   //
-std::vector< std::vector<float> >                     makeJetMat(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC, int jetNum, int ptnId);
+  std::vector< std::vector<float> >                     makeJetMat(const reco::Jet *jet, edm::Handle<reco::VertexCollection>& vC, int jetNum, int ptnId);
 
   bool 							isPatJetCollection(const edm::Handle<edm::View<reco::Jet>>& jets);
   bool 							isPackedCandidate(const reco::Candidate* candidate);
@@ -74,12 +74,10 @@ std::vector< std::vector<float> >                     makeJetMat(const reco::Jet
   edm::Service<TFileService> 				fs;
   TTree 						*tree;
 
-        
-        //http://jets.physics.harvard.edu/qvg/
-        //https://cds.cern.ch/record/2280190/files/SummerReport_Simonas_Drauksas.pdf -> GeoMoent = WidthMoment in the page
+  //http://jets.physics.harvard.edu/qvg/
+  //https://cds.cern.ch/record/2280190/files/SummerReport_Simonas_Drauksas.pdf -> GeoMoent = WidthMoment in the page
   float dr, JetAngularity, GeoMoment, HalfPtMoment, DRSquareMoment, SmallDRPT, MassMoment, PTSquare, MyMoment;
   int ParticleCount;
-
 
   float rho, pt, eta, axis2, axis1, ptD, bTag, ptDoubleCone, motherMass, pt_dr_log, qgLikelihood_;
   int nEvent, nPileUp, nPriVtxs, mult, nmult, cmult, partonId, jetIdLevel, nGenJetsInCone, nGenJetsForGenParticle, nJetsForGenParticle, motherId, nJets, nGenJets, nMatchedJets;
@@ -160,28 +158,8 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     nPriVtxs = vertexCollection->size();
     rho      = (float) *rhoHandle;
     nPileUp  = getPileUp(pupInfo);
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 6654317f9749daf7eb636d9d9944259bbe43ee9e
     int jetNum = 0;
-    
-    nJets = 0;
-    nMatchedJets = 0;
-    nGenJets = genJets->size();
-    // for (auto &jet : jets) {
-    for(auto jet = jets->begin();  jet != jets->end(); ++jet){
-	if (jet->pt() > minJetPt) {
-	   nJets++;
-	
-            // Parton Id matching
-	    auto matchedGenParticle = getMatchedGenParticle(&*jet, genParticles);
-	    matchedJet = (matchedGenParticle != genParticles->end());
-	    if (matchedJet)
-	        nMatchedJets++;
-	}
-    }
 
     nJets = 0;
     nMatchedJets = 0;
@@ -224,11 +202,7 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	    // if( isPatJet_ )
 	    // 	closebyJetPt->push_back(otherJet->pt());
 	    // else
-<<<<<<< HEAD
-	    //  closebyJetPt->push_back(otherJet->pt()*JEC->correction(*otherJet, iEvent, iSetup));
-=======
 	    // 	closebyJetPt->push_back(otherJet->pt()*JEC->correction(*otherJet, iEvent, iSetup));
->>>>>>> 6654317f9749daf7eb636d9d9944259bbe43ee9e
         }
 
         if (overLappingJet)
@@ -245,17 +219,10 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 	    if(matchedGenParticle->numberOfMothers() == 1){
 	        // Very experimental, but first tests shows it's good at finding W's and t's
-<<<<<<< HEAD
-	        // A bit more difficult for QCD, where it's sometimes a quark, decaying into
-	        // quark+gluon, and sometimes just a proton with a lot of other QCD mess and
-	        // sometimes 2 mothers (mostly two quarks recoiling each other, but sometimes
-	        // also two quarks going into two gluons etc...)
-=======
 		// A bit more difficult for QCD, where it's sometimes a quark, decaying into
 		// quark+gluon, and sometimes just a proton with a lot of other QCD mess and
 		// sometimes 2 mothers (mostly two quarks recoiling each other, but sometimes
 		// also two quarks going into two gluons etc...)
->>>>>>> 6654317f9749daf7eb636d9d9944259bbe43ee9e
                  motherId		= matchedGenParticle->mother()->pdgId();
         	 motherMass		= matchedGenParticle->mother()->mass();
 	    }
@@ -289,13 +256,8 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	    // cms qgLikelihood
 	    qgLikelihood_ = qgInputTag.label().empty() ? 0 : (*qgHandle)[jetRef];      
 	    /*    axis2		= (*axis2Handle)[jetRef];
-<<<<<<< HEAD
-    		  mult		= (*multHandle)[jetRef];
-  		  ptD		= (*ptDHandle)[jetRef];*/
-=======
 		  mult		= (*multHandle)[jetRef];
 		  ptD		= (*ptDHandle)[jetRef];*/
->>>>>>> 6654317f9749daf7eb636d9d9944259bbe43ee9e
 	}
 
 	dau_jetNum_ = new std::vector<int>();
@@ -310,11 +272,7 @@ void jetAnalyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 	jetNum++;
 
-<<<<<<< HEAD
 	std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log, dr, JetAngularity, GeoMoment, HalfPtMoment, DRSquareMoment, SmallDRPT, MassMoment, ParticleCount, PTSquare, MyMoment) = calcVariables(&*jet, vertexCollection);
-=======
-	std::tie(mult, nmult, cmult, ptD, axis2, axis1, pt_dr_log) = calcVariables(&*jet, vertexCollection);
->>>>>>> 6654317f9749daf7eb636d9d9944259bbe43ee9e
 	axis2 			= -std::log(axis2);
 	axis1                   = -std::log(axis1);
 	eta			= jet->eta();
@@ -506,7 +464,7 @@ std::tuple<int, int, int, float, float, float, float, float,float,float,float,fl
 	++nmult;
       }
 
-      //Calculate pt_dr_log and other vars
+      //Calculate pt_dr_log and some vars                                                                                                                                
       float dr = reco::deltaR(*jet, *part);
       float theta = (Pi*dr)/(2*0.4);
 
@@ -522,6 +480,8 @@ std::tuple<int, int, int, float, float, float, float, float,float,float,float,fl
       ParticleCount += (powf((part->pt()/jet->pt()),0))*(powf((dr/0.4),0));
       PTSquare += (powf((part->pt()/jet->pt()),2))*(powf((dr/0.4),0));
       MyMoment += (powf((part->pt()/jet->pt()),2))*(powf((dr/0.4),-1.5));
+
+
 
     }
     else {
@@ -566,7 +526,7 @@ std::tuple<int, int, int, float, float, float, float, float,float,float,float,fl
 	++nmult;
       }
 
-      //Calculate pt_dr_log and other vars
+      //Calculate pt_dr_log and other vars                                                                                                                                
       float dr = reco::deltaR(*jet, *part);
       float theta = (Pi*dr)/(2*0.4);
 
@@ -631,7 +591,7 @@ template <class jetClass> bool jetAnalyser::jetId(const jetClass *jet, bool tigh
   int CHM      = j.chargedMultiplicity();
   int NumNeutralParticle =j.neutralMultiplicity(); 
   float eta = j.eta();
-  
+
   // POG JetID loose, tight, tightLepVeto
   if (not tight and not medium) { // loose -- default
     jetid=(NHF<0.99 && NEMF<0.99 && NumConst>1) && ((abs(eta)<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(eta)>2.4) && abs(eta)<=2.7 ;
@@ -704,4 +664,3 @@ reco::GenParticleCollection::const_iterator jetAnalyser::getMatchedGenParticle(c
 }
 
 DEFINE_FWK_MODULE(jetAnalyser);
-
